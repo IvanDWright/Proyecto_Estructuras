@@ -5,6 +5,47 @@
 #include <map>
 
 using namespace std;
+/*
+=============================================================================
+Revisión de Código y Registro de Correcciones (Auditoría del Bucle REPL)
+=============================================================================
+El siguiente bloque documenta el código base previo que fue sometido a revisión
+y la lista explícita de correcciones realizadas junto con el motivo técnico de
+cada ajuste, cumpliendo con los requerimientos de documentación del Prompt 5.
+
+1. Procesamiento de Entrada (Tokenización)
+   - Código Previo: 
+       string arg; 
+       while(linea.find(' ') != string::npos) { 
+           // lógica manual con substr y erase repetitivo 
+       }
+   - Código Corregido: Se implementó tokenización limpia mediante std::stringstream ss(linea);
+   - Motivo Técnico: Evitar errores de índice, mejorar la eficiencia en O(N) y manejar
+     múltiples espacios consecutivos correctamente, proveyendo un parseo seguro.
+
+2. Validación de Estado de Juego
+   - Código Previo: 
+       else if (comando == "estado_juego") { 
+           if(args.size() == 0 && is_initialized == true) { ... } 
+           else if(args.size() == 0 && is_initialized == false) { ... } 
+       }
+   - Código Corregido: Se utilizó args.empty() y se reestructuraron los condicionales directos.
+   - Motivo Técnico: Mayor legibilidad del código, reducción de código duplicado 
+     y apego a las buenas prácticas de C++.
+
+3. Terminación del Programa
+   - Código Previo: 
+       else if (comando == "salir") { 
+           exit(0); 
+       }
+   - Código Corregido: Se modificó la bandera de control del ciclo:
+       else if (comando == "salir") { 
+           is_running = false; 
+       }
+   - Motivo Técnico: Garantizar una finalización limpia de la pila de llamadas, 
+     liberación de recursos y un retorno de main() adecuado sin forzar la salida.
+=============================================================================
+*/
 
 // Estructura para almacenar información de ayuda de comandos
 struct ComandoAyuda {
