@@ -1,0 +1,2 @@
+# Ignorar todos los archivos Markdown (La entrega solo permite .pdf y .cpp)
+*.md
