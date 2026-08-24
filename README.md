@@ -2,26 +2,26 @@
 
 Este proyecto implementa un sistema de apoyo interactivo para el clásico juego de mesa **Risk**, diseñado para la asignatura de Estructuras de Datos. 
 
-Actualmente, el proyecto refleja los requisitos de la **Entrega 0**, enfocada de manera exclusiva en la **Interfaz de Usuario y Validación de Comandos**.
+Actualmente, el proyecto refleja los requisitos de la **Entrega 1**, enfocada en el **Componente 1: Configuración del juego** implementado a partir de estructuras lineales.
 
-## Características de la Entrega 0
+## Características de la Entrega 1
 
-En esta etapa inicial, el proyecto cuenta con un entorno interactivo de línea de comandos (REPL) con las siguientes características:
+En esta etapa, el proyecto cuenta con un entorno interactivo de línea de comandos (REPL) y la lógica inicial del juego con las siguientes características:
 - **Consola Interactiva:** Un ciclo infinito que lee entradas del usuario tras el prompt `$ `.
-- **Validación Paramétrica:** Antes de ejecutar cualquier simulación, el sistema valida que los comandos ingresados coincidan exactamente en nombre y cantidad de parámetros con lo especificado en el diseño.
+- **Validación y Estructuras Lineales:** Los comandos principales del juego (`inicializar`, `obtener_unidades`, `atacar`, `fortificar`, `estado_juego`) validan sus parámetros y comienzan a incorporar la lógica por turnos usando estructuras de datos lineales.
 - **Sistema Integrado:** Todos los componentes se gestionan desde un mismo programa unificado.
 - **Mensajes de Interfaz:** Respuestas adaptadas a cada comando (mensajes de éxito, advertencia de "juego no inicializado" y control de errores por parámetros inválidos).
 
-*(Nota: La lógica interna de Estructuras Lineales, Árboles de Huffman para compresión y Grafos para estrategias de conquista se incorporarán en las entregas 1, 2 y 3 respectivamente).*
+*(Nota: La compresión con Árboles de Huffman y las estrategias de conquista con Grafos se incorporarán en las entregas 2 y 3 respectivamente).*
 
 ## Instrucciones de Compilación y Ejecución
 
 El proyecto está diseñado para compilarse utilizando el compilador GNU C++ (`g++`).
 
 ### 1. Compilar
-Abre tu terminal en el directorio del proyecto y ejecuta el siguiente comando:
+Abre tu terminal en el directorio raíz del proyecto y ejecuta:
 ```bash
-g++ main.cpp -o risk_app
+g++ src/main.cpp -I tads -o risk_app
 ```
 
 ### 2. Ejecutar
@@ -36,6 +36,13 @@ Una vez compilado, puedes iniciar la consola interactiva:
 ```bash
 ./risk_app
 ```
+
+## Estructura del Proyecto
+
+- `tads/`: Implementación e interfaces de los Tipos Abstractos de Datos (`.h`, `.hxx`, `.cpp`).
+- `src/`: Código fuente principal de la aplicación (`main.cpp`).
+- `docs/`: Documentación, requisitos y especificaciones del proyecto (`.md`).
+- `data/`: Archivos de prueba y datos de inicio (`.txt`).
 
 ## Lista de Comandos Disponibles
 
