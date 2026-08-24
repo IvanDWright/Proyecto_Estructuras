@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.h": "cpp",
+        "*.hxx": "cpp"
+    },
+    "clangd.query-driver": "C:/Users/straw/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.MCF.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin/g++.exe",
+    "C_Cpp.default.compilerPath": "C:/Users/straw/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.MCF.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin/g++.exe"
+}
