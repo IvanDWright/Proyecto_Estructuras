@@ -9,7 +9,28 @@
 
 /*
 ================================================================================
+TAD: TableroRisk
+================================================================================
+Creado por: Antigravity (IA)
 
+Descripción:
+  Este TAD representa el mapa completo del juego Risk. Funciona como el
+  contenedor principal de las listas de territorios y continentes, y se encarga
+  de inicializar toda la geografía del juego, incluyendo la creación de los
+  42 territorios reglamentarios y la configuración del grafo bidireccional de
+  las fronteras.
+
+Funciones Principales:
+  1. inicializarMapa: Instancia los continentes, luego los 42 territorios y, 
+     finalmente, crea todas las aristas del grafo interconectando fronteras.
+  2. conectarBidireccional: Crea una conexión de ida y vuelta entre dos
+     territorios dados sus códigos.
+  3. buscarTerritorio: Recorre la lista de territorios para encontrar un 
+     territorio en específico usando su código (Ej. "1.1").
+  4. contarTerritoriosDe: Utilidad para saber cuántos territorios domina
+     un color (jugador) en todo el tablero.
+  5. calcularBonoContinentes: Verifica cada continente para sumar tropas extra 
+     si un jugador los domina por completo.
 ================================================================================
 */
 

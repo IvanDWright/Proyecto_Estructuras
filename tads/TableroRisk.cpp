@@ -1,8 +1,19 @@
 #include "TableroRisk.h"
-
 /*
 ================================================================================
+TAD: TableroRisk
+================================================================================
+Creado por: Antigravity (IA)
 
+Descripción de la Implementación:
+  Este archivo contiene la lógica completa para inicializar y gestionar el
+  tablero del juego. Se implementa de forma "hardcodeada" toda la geografía,
+  creando primero los 6 continentes y luego los 42 territorios.
+  
+  En inicializarMapa(), después de instanciar cada nodo (territorio), 
+  se procede a interconectarlos llamando repetidamente a conectarBidireccional()
+  para armar el grafo del mapa. También se encarga de proporcionar las 
+  búsquedas necesarias (buscarTerritorio, contarTerritoriosDe) que usa el juego.
 ================================================================================
 */
 
