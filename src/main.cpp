@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -21,50 +20,39 @@ using namespace std;
 
 // Estructura para almacenar información de ayuda de comandos
 struct ComandoAyuda {
+  string nombre;
   string uso;
   string descripcion;
 };
 
-// Diccionario de comandos para el comando 'ayuda'
-map<string, ComandoAyuda> comandos = {
-    {"inicializar",
-     {"inicializar <archivo>", "Inicializa el juego con los datos de un "
-                               "archivo de texto plano o binario."}},
-    {"obtener_unidades",
-     {"obtener_unidades <nombre_jugador>",
-      "Calcula y asigna unidades adicionales al jugador."}},
-    {"atacar",
-     {"atacar <nombre_jugador>",
-      "Inicia la fase de ataque para el jugador especificado."}},
-    {"fortificar",
-     {"fortificar <nombre_jugador>",
-      "Inicia la fase de fortificacion para el jugador especificado."}},
-    {"estado_juego", {"estado_juego", "Muestra el estado actual del juego."}},
-    {"salir", {"salir", "Termina la ejecucion de la aplicacion."}},
-    {"guardar",
-     {"guardar <nombre_archivo>",
-      "Guarda el estado del juego en un archivo de texto plano."}},
-    {"guardar_comprimido",
-     {"guardar_comprimido <nombre_archivo>",
-      "Guarda el estado del juego en un archivo binario comprimido "
-      "(Huffman)."}},
-    {"costo_conquista",
-     {"costo_conquista <nombre_jugador> <territorio>",
-      "Calcula el costo y secuencia de territorios para conquistar el "
-      "territorio indicado."}},
-    {"conquista_mas_barata",
-     {"conquista_mas_barata <nombre_jugador>",
-      "Calcula y sugiere la conquista que implica la menor perdida de "
-      "ejercitos."}},
-    {"ayuda",
-     {"ayuda [comando]", "Muestra la lista de comandos disponibles o detalla "
-                         "el uso de un comando especifico."}}};
+// Lista de comandos para el comando 'ayuda'
+vector<ComandoAyuda> comandos = {
+    {"inicializar", "inicializar <archivo>",
+     "Inicializa el juego con los datos de un archivo de texto plano o binario."},
+    {"obtener_unidades", "obtener_unidades <nombre_jugador>",
+     "Calcula y asigna unidades adicionales al jugador."},
+    {"atacar", "atacar <nombre_jugador>",
+     "Inicia la fase de ataque para el jugador especificado."},
+    {"fortificar", "fortificar <nombre_jugador>",
+     "Inicia la fase de fortificacion para el jugador especificado."},
+    {"estado_juego", "estado_juego", "Muestra el estado actual del juego."},
+    {"salir", "salir", "Termina la ejecucion de la aplicacion."},
+    {"guardar", "guardar <nombre_archivo>",
+     "Guarda el estado del juego en un archivo de texto plano."},
+    {"guardar_comprimido", "guardar_comprimido <nombre_archivo>",
+     "Guarda el estado del juego en un archivo binario comprimido (Huffman)."},
+    {"costo_conquista", "costo_conquista <nombre_jugador> <territorio>",
+     "Calcula el costo y secuencia de territorios para conquistar el territorio indicado."},
+    {"conquista_mas_barata", "conquista_mas_barata <nombre_jugador>",
+     "Calcula y sugiere la conquista que implica la menor perdida de ejercitos."},
+    {"ayuda", "ayuda [comando]",
+     "Muestra la lista de comandos disponibles o detalla el uso de un comando especifico."}};
 
 // Función auxiliar para imprimir la lista general de comandos
 void mostrar_ayuda() {
   cout << "Lista de comandos disponibles:\n";
-  for (const auto &par : comandos) {
-    cout << " - " << par.first << "\n";
+  for (const auto &cmd : comandos) {
+    cout << " - " << cmd.nombre << "\n";
   }
 }
 
@@ -76,13 +64,15 @@ int calcular_tropas(int a) {
 
 // Función auxiliar para imprimir el detalle de un comando
 void mostrar_ayuda_comando(const string &cmd) {
-  if (comandos.find(cmd) != comandos.end()) {
-    cout << "Uso: " << comandos[cmd].uso << "\n";
-    cout << "Descripcion: " << comandos[cmd].descripcion << "\n";
-  } else {
-    cout << "El comando '" << cmd
-         << "' no existe. Escriba 'ayuda' para ver los comandos disponibles.\n";
+  for (const auto &c : comandos) {
+    if (c.nombre == cmd) {
+      cout << "Uso: " << c.uso << "\n";
+      cout << "Descripcion: " << c.descripcion << "\n";
+      return;
+    }
   }
+  cout << "El comando '" << cmd
+       << "' no existe. Escriba 'ayuda' para ver los comandos disponibles.\n";
 }
 
 /*
@@ -95,58 +85,66 @@ atacante pierde 1 tropa.
 ======================================================================================
 */
 bool atacar(int &tropas_atacantes, int &tropas_defensores) {
-  int dados_atacante = min(3, tropas_atacantes - 1);
-  int dados_defensor = min(2, tropas_defensores);
+  while (tropas_atacantes > 0 && tropas_defensores > 0) {
+    int dados_atacante = min(3, tropas_atacantes);
+    int dados_defensor = min(2, tropas_defensores);
 
-  if (dados_atacante <= 0) {
-    cout << "El atacante no tiene suficientes tropas para atacar.\n";
-    return false;
-  }
+    vector<int> tiradas_atacante(dados_atacante);
+    vector<int> tiradas_defensor(dados_defensor);
 
-  vector<int> tiradas_atacante(dados_atacante);
-  vector<int> tiradas_defensor(dados_defensor);
+    cout << "\n[!] Lanzamiento de dados...\n";
+    cout << "Atacante tira " << dados_atacante << " dado(s):\n";
+    for (int i = 0; i < dados_atacante; ++i) {
+      tiradas_atacante[i] = rand() % 6 + 1;
+      cout << "  - Dado " << i + 1 << ": " << tiradas_atacante[i] << "\n";
+    }
 
-  cout << "\n[!] Lanzamiento de dados...\n";
-  cout << "Atacante tira " << dados_atacante << " dado(s):\n";
-  for (int i = 0; i < dados_atacante; ++i) {
-    tiradas_atacante[i] = rand() % 6 + 1;
-    cout << "  - Dado " << i + 1 << ": " << tiradas_atacante[i] << "\n";
-  }
+    cout << "Defensor tira " << dados_defensor << " dado(s):\n";
+    for (int i = 0; i < dados_defensor; ++i) {
+      tiradas_defensor[i] = rand() % 6 + 1;
+      cout << "  - Dado " << i + 1 << ": " << tiradas_defensor[i] << "\n";
+    }
 
-  cout << "Defensor tira " << dados_defensor << " dado(s):\n";
-  for (int i = 0; i < dados_defensor; ++i) {
-    tiradas_defensor[i] = rand() % 6 + 1;
-    cout << "  - Dado " << i + 1 << ": " << tiradas_defensor[i] << "\n";
-  }
+    sort(tiradas_atacante.rbegin(), tiradas_atacante.rend());
+    sort(tiradas_defensor.rbegin(), tiradas_defensor.rend());
 
-  sort(tiradas_atacante.rbegin(), tiradas_atacante.rend());
-  sort(tiradas_defensor.rbegin(), tiradas_defensor.rend());
+    int duelos = min(dados_atacante, dados_defensor);
+    cout << "\n--- Resultados de los duelos ---\n";
 
-  int duelos = min(dados_atacante, dados_defensor);
-  cout << "\n--- Resultados de los duelos ---\n";
+    for (int i = 0; i < duelos; ++i) {
+      cout << "Duelo " << i + 1 << ": Atacante (" << tiradas_atacante[i]
+           << ") vs Defensor (" << tiradas_defensor[i] << ") -> ";
+      if (tiradas_atacante[i] > tiradas_defensor[i]) {
+        tropas_defensores--;
+        cout << "El defensor pierde 1 tropa.\n";
+      } else {
+        tropas_atacantes--;
+        cout << "El atacante pierde 1 tropa.\n";
+      }
+    }
+    cout << "--------------------------------\n";
+    cout << "Tropas restantes de la invasion - Atacante: " << tropas_atacantes
+         << " | Defensor: " << tropas_defensores << "\n\n";
 
-  for (int i = 0; i < duelos; ++i) {
-    cout << "Duelo " << i + 1 << ": Atacante (" << tiradas_atacante[i]
-         << ") vs Defensor (" << tiradas_defensor[i] << ") -> ";
-    if (tiradas_atacante[i] > tiradas_defensor[i]) {
-      tropas_defensores--;
-      cout << "El defensor pierde 1 tropa.\n";
-    } else {
-      tropas_atacantes--;
-      cout << "El atacante pierde 1 tropa.\n";
+    if (tropas_defensores == 0) {
+      cout << "¡El atacante ha conquistado el territorio!\n";
+      return true;
+    }
+    if (tropas_atacantes == 0) {
+      cout << "El atacante se ha quedado sin tropas en esta invasion.\n";
+      return false;
+    }
+
+    cout << "¿Deseas continuar el ataque con las tropas restantes? (s/n): ";
+    string resp;
+    cin >> resp;
+    if (resp != "s" && resp != "S") {
+      break;
     }
   }
-  cout << "--------------------------------\n";
-  cout << "Tropas restantes - Atacante: " << tropas_atacantes
-       << " | Defensor: " << tropas_defensores << "\n\n";
 
-  if (tropas_defensores == 0) {
-    cout << "¡El atacante ha conquistado el territorio!\n";
-  } else {
-    cout << "El defensor mantiene el territorio por ahora.\n";
-  }
-
-  return tropas_defensores == 0;
+  cout << "El defensor mantiene el territorio por ahora.\n";
+  return false;
 }
 
 int main() {
@@ -154,6 +152,7 @@ int main() {
   bool is_running = true;
   bool is_initialized = false;
   JuegoRisk juego;
+  bool jugadorHaAtacado = false;
 
   // Ciclo de evaluación de la consola interactiva (REPL)
   while (is_running) {
@@ -207,7 +206,11 @@ int main() {
             juego.tablero.limpiar();
             juego.estado = NO_INICIALIZADO;
 
-            map<string, int> tropasPorColor;
+            struct TropasColor {
+              string color;
+              int tropas;
+            };
+            vector<TropasColor> tropasPorColor;
 
             // 2. Leer jugadores
             if (formatoCorrecto) {
@@ -218,7 +221,7 @@ int main() {
                   break;
                 }
                 juego.jugadores.agregarAlFinal(Jugador(nombre, color));
-                tropasPorColor[color] = 0;
+                tropasPorColor.push_back({color, 0});
               }
             }
 
@@ -233,8 +236,15 @@ int main() {
                   break;
                 }
 
-                if (tropasPorColor.find(colorOcupante) ==
-                    tropasPorColor.end()) {
+                TropasColor *tcOcupante = nullptr;
+                for (auto &tc : tropasPorColor) {
+                  if (tc.color == colorOcupante) {
+                    tcOcupante = &tc;
+                    break;
+                  }
+                }
+
+                if (tcOcupante == nullptr) {
                   formatoCorrecto =
                       false; // Color no pertenece a un jugador válido
                   break;
@@ -247,7 +257,7 @@ int main() {
                 }
 
                 ter->asignarOcupante(colorOcupante, numTropas);
-                tropasPorColor[colorOcupante] += numTropas;
+                tcOcupante->tropas += numTropas;
               }
             }
 
@@ -263,8 +273,8 @@ int main() {
               else if (numJugadores == 6)
                 tropasEsperadas = 20;
 
-              for (const auto &par : tropasPorColor) {
-                if (par.second != tropasEsperadas) {
+              for (const auto &tc : tropasPorColor) {
+                if (tc.tropas != tropasEsperadas) {
                   formatoCorrecto = false;
                   break;
                 }
@@ -297,13 +307,22 @@ int main() {
     // ==========================================
     /*
     =====================================================================================
+    verificaciones:
+    1. El jugador existe
+    2. El jugador tiene tropas para poner
+    3. El jugador tiene un territorio para poner tropas
+    4. La seleccion es uno de sus territorios
+
+    Funcionamiento: 
     Esta opcion permite anadir una cantidad de unidades a un territorio.
-    Valida multiples cosas antes de hacerlo, despues menciona tus territorios
-    mientras los guarda en un vector, elijes donde y cuantas tropas poner en tu
-    territorio, y si te quedan tropas por poner vuelve a preguntar.
+    menciona los territorios del jugador mientras los guarda en un vector, elijes
+    donde y cuantas tropas poner en tu territorio, y si te quedan tropas por poner vuelve 
+    a preguntar.
     =======================================================================================
     */
     else if (comando == "obtener_unidades") {
+      // Reinicia el estado del turno para el jugador
+      jugadorHaAtacado = false;
       // Valida cantidad de parámetros
       if (args.size() == 1) {
         // Validaciones de estado global
@@ -331,6 +350,8 @@ int main() {
           }
 
           int tropas_a_anadir = calcular_tropas(territorio_posible.size());
+          int bono_continentes = juego.tablero.calcularBonoContinentes(juego.obtenerJugadorEnTurno()->color);
+          tropas_a_anadir += bono_continentes;
           if (tropas_a_anadir < 3)
             tropas_a_anadir = 3;
 
@@ -390,6 +411,31 @@ int main() {
     // ==========================================
     // COMANDO: atacar
     // ==========================================
+
+    /*
+    ===================================================================================
+    validaciones globales:
+    1. El juego esta en curso y no ha terminado.
+    2. El jugador existe, es su turno y ya ha reclamado sus unidades.
+    3. verifica que el jugador ya ataco mediante el bood de "haAtacado"
+
+    Funcionamiento (Paso a paso):
+    1. Filtra los territorios disponibles, confirmando que solamente se den resultados validos
+       (Mas de 1 tropa y tenga vecinos enemigos). Si no hay territorios válidos, informa de 
+       inmediato y finaliza la acción.
+    3. Selección de origen: Muestra los territorios válidos y pide al jugador seleccionar 
+       desde cuál atacar, junto con la cantidad de tropas a utilizar (las cuales son 
+       temporalmente restadas del territorio de origen).
+    4. Filtrado de objetivo: Una vez elegido el origen, crea un vector únicamente con los 
+       territorios vecinos que pertenecen a otros jugadores, asegurando una selección válida.
+    5. Ejecución del ataque: Llama a la función 'atacar()' pasándole las tropas atacantes 
+       y defensoras. Debido a que la función recibe estos parámetros por referencia (int &), 
+       las bajas se aplican y actualizan directamente en las variables suministradas.
+    6. Resultados: Si el ataque es exitoso, se asigna el territorio al atacante y se 
+       ubican las tropas sobrevivientes allí. Si fracasa, las tropas sobrevivientes 
+       regresan al territorio de origen.
+    ===================================================================================
+    */
     else if (comando == "atacar") {
       if (args.size() == 1) {
         if (!is_initialized) {
@@ -408,60 +454,129 @@ int main() {
           // Valida que el jugador ya haya obtenido sus unidades
           cout << "(Jugador no ha ubicado unidades) El jugador " << args[0]
                << " no ha ejecutado el comando obtener_unidades.\n";
+        } else if (juego.obtenerJugadorEnTurno()->faseActual ==
+                   FASE_FORTIFICAR) {
+          // Valida que el jugador ya haya fortificado
+          cout << "(Jugador ya fortifico) El jugador " << args[0]
+               << " ya no puede atacar.\n";
         } else {
-          int index = 1;
-          int opcion = 0;
-          int opcion2 = 0;
+          Jugador *jugadorActual = juego.obtenerJugadorEnTurno();
+
+          // Filtrar los territorios del jugador que tienen > 1 tropa Y al menos un vecino enemigo
           vector<Territorio *> misTerritorios;
           for (int i = 0; i < 42; i++) {
-            if (juego.tablero.territorios.obtener(i).colorOcupante ==
-                juego.obtenerJugadorEnTurno()->color) {
-              misTerritorios.push_back(&juego.tablero.territorios.obtener(i));
-            }
-          }
-          cout << "\n desde cual de tus territorios quieres atacar? ";
-          for (vector<Territorio *>::iterator i = misTerritorios.begin();
-               i != misTerritorios.end(); ++i) {
-            cout << index << ". " << (*i)->nombre << " (tienes "
-                 << (*i)->numEjercitos << " tropas)\n";
-            index++;
-          }
-          cin >> opcion;
-          if (opcion <= 0 && opcion >= (index - 1)) {
-            cout << "Error: Opcion invalida\n";
-          } else {
-            cout << "\n a cual territorio quieres atacar? \n";
-            for (int i = 0; i < misTerritorios[opcion - 1]->vecinos.longitud();
-                 ++i) {
-              Territorio *vecino =
-                  misTerritorios[opcion - 1]->vecinos.obtener(i);
-              cout << i + 1 << ". " << vecino->nombre << endl;
-            }
-            do {
-              cin >> opcion2;
-              if (opcion2 <= 0 &&
-                  opcion2 >= (misTerritorios[opcion - 1]->vecinos.longitud())) {
-                cout << "Error: Opcion invalida\n";
+            Territorio &ter = juego.tablero.territorios.obtener(i);
+            if (ter.colorOcupante == jugadorActual->color && ter.numEjercitos > 1) {
+              bool tieneVecinoEnemigo = false;
+              for (int j = 0; j < ter.vecinos.longitud(); ++j) {
+                if (ter.vecinos.obtener(j)->colorOcupante != jugadorActual->color) {
+                  tieneVecinoEnemigo = true;
+                  break;
+                }
               }
-            } while (opcion2 <= 0 &&
-                     opcion2 >=
-                         (misTerritorios[opcion - 1]->vecinos.longitud()));
+              if (tieneVecinoEnemigo) {
+                misTerritorios.push_back(&ter);
+              }
+            }
           }
-          // y dados
-          Jugador *jugadorActual = juego.obtenerJugadorEnTurno();
-          jugadorActual->faseActual =
-              FASE_FORTIFICAR; // Avanza a la fase de fortificación
-          cout << "(Comando correcto) El jugador " << args[0]
-               << " ha terminado de atacar.\n";
+
+          if (misTerritorios.empty()) {
+            cout << "(Jugador no puede atacar) " << args[0]
+                 << " no tiene territorios con mas de 1 tropa y vecinos enemigos para atacar.\n";
+          } else {
+            cout << "\nDesde cual de tus territorios quieres atacar? (Ingresa 0 para no atacar / terminar fase de ataque)\n";
+            for (size_t i = 0; i < misTerritorios.size(); ++i) {
+              cout << i + 1 << ". " << misTerritorios[i]->nombre << " (tienes "
+                   << misTerritorios[i]->numEjercitos << " tropas)\n";
+            }
+            cout << "0. Terminar fase de ataque y pasar a fortificar\n";
+
+            int opcion = -1;
+            cin >> opcion;
+            if (opcion == 0) {
+              jugadorHaAtacado = true;
+              jugadorActual->faseActual = FASE_FORTIFICAR;
+              cin.ignore(10000, '\n');
+              cout << "(Comando correcto) El jugador " << args[0]
+                   << " ha terminado de atacar.\n";
+            } else if (opcion < 0 || opcion > (int)misTerritorios.size()) {
+              cout << "Error: Opcion invalida\n";
+            } else {
+              Territorio *territorioOrigen = misTerritorios[opcion - 1];
+              int maxTropas = territorioOrigen->numEjercitos - 1;
+
+              cout << "Con cuantas tropas quieres atacar? (1 a " << maxTropas << "): \n";
+              int tropas = 0;
+              cin >> tropas;
+              if (tropas <= 0 || tropas > maxTropas) {
+                cout << "Error: Opcion invalida\n";
+              } else {
+                territorioOrigen->modificarEjercitos(-tropas);
+
+                // Filtrar únicamente los vecinos que pertenecen a otros jugadores
+                vector<Territorio *> territoriosAtacar;
+                for (int i = 0; i < territorioOrigen->vecinos.longitud(); ++i) {
+                  Territorio *vecino = territorioOrigen->vecinos.obtener(i);
+                  if (vecino->colorOcupante != jugadorActual->color) {
+                    territoriosAtacar.push_back(vecino);
+                  }
+                }
+
+                cout << "\nA cual territorio quieres atacar?\n";
+                for (size_t i = 0; i < territoriosAtacar.size(); ++i) {
+                  cout << i + 1 << ". " << territoriosAtacar[i]->nombre
+                       << " (Propietario: " << territoriosAtacar[i]->colorOcupante
+                       << " - Tropas: " << territoriosAtacar[i]->numEjercitos << ")\n";
+                }
+
+                int opcion2 = 0;
+                do {
+                  cin >> opcion2;
+                  if (opcion2 <= 0 || opcion2 > (int)territoriosAtacar.size()) {
+                    cout << "Error: Opcion invalida\n";
+                  }
+                } while (opcion2 <= 0 || opcion2 > (int)territoriosAtacar.size());
+
+                Territorio *territorioDefensor = territoriosAtacar[opcion2 - 1];
+                bool gano = atacar(tropas, territorioDefensor->numEjercitos);
+                jugadorHaAtacado = true;
+
+                if (gano) {
+                  territorioDefensor->asignarOcupante(jugadorActual->color, tropas);
+                  cout << "¡Has conquistado el territorio " << territorioDefensor->nombre << "!\n";
+                  cout << "Tropas ubicadas en ese territorio: " << tropas << "\n";
+                } else {
+                  territorioOrigen->modificarEjercitos(tropas);
+                  cout << "Ataque finalizado. Tropas sobrevivientes devueltas a tu territorio.\n";
+                }
+              }
+              cin.ignore(10000, '\n');
+              cout << "(Comando correcto) El jugador " << args[0]
+                   << " ha terminado de atacar.\n";
+            }
+          }
         }
       } else {
         cout << "Error: Numero de parametros incorrecto.\n";
         mostrar_ayuda_comando(comando);
       }
     }
-    // ==========================================
-    // COMANDO: fortificar
-    // ==========================================
+    /*
+    ===================================================================================
+    verificaciones globales:
+    1. El juego esta inicializado.
+    2. El juego no ha terminado.
+    3. El jugador existe, es su turno y ya ha atacado.
+
+    Funcionamiento (Paso a paso):
+    1. Verifica que el jugador ya haya pasado por la fase de ataque (jugadorHaAtacado).
+    2. Pregunta al usuario si desea fortificar un territorio.
+    3. Muestra una lista de territorios propios que tienen al menos un vecino propio y >1 tropa.
+    4. Pide seleccionar un territorio de origen y luego un vecino propio como destino.
+    5. Solicita la cantidad de tropas a mover (respetando que debe quedar al menos 1).
+    6. Realiza el movimiento y pasa el turno al siguiente jugador.
+    ===================================================================================
+    */
     else if (comando == "fortificar") {
       if (args.size() == 1) {
         if (!is_initialized) {
@@ -475,19 +590,103 @@ int main() {
         } else if (juego.obtenerJugadorEnTurno()->nombre != args[0]) {
           cout << "(Jugador fuera de turno) No es el turno del jugador "
                << args[0] << ".\n";
-        } else if (juego.obtenerJugadorEnTurno()->faseActual ==
-                       FASE_OBTENER_UNIDADES ||
-                   juego.obtenerJugadorEnTurno()->faseActual == FASE_ATACAR) {
+        } else if (!jugadorHaAtacado) {
           // Valida que el jugador haya pasado por la fase de ataque primero
           cout << "(Jugador no ha atacado) El jugador " << args[0]
                << " no ha ejecutado el comando atacar.\n";
         } else {
-          // TODO: Lógica de movimiento de infantería entre territorios aliados
-          // vecinos
+          Jugador *jugadorActual = juego.obtenerJugadorEnTurno();
+          jugadorActual->faseActual = FASE_FORTIFICAR;
+          vector<Territorio *> territoriosDisponibles;
+          vector<Territorio *> vecinosDisponibles;
+          Territorio *a;
+          Territorio *b;
+          string eleccion;
+          int opcion = 0;
+
+          cout << "¿Quieres fortificar algun territorio? (s/n): ";
+          cin >> eleccion;
+          if (eleccion == "s" || eleccion == "S") {
+            for (int i = 0; i < 42; i++) {
+              Territorio &t = juego.tablero.territorios.obtener(i);
+              if (t.colorOcupante == jugadorActual->color && t.numEjercitos > 1) {
+                bool tieneVecinoPropio = false;
+                for (int j = 0; j < t.vecinos.longitud(); j++) {
+                  if (t.vecinos.obtener(j)->colorOcupante == jugadorActual->color) {
+                    tieneVecinoPropio = true;
+                    break;
+                  }
+                }
+                if (tieneVecinoPropio) {
+                  territoriosDisponibles.push_back(&t);
+                }
+              }
+            }
+
+            if (territoriosDisponibles.empty()) {
+              cout << "No tienes territorios con tropas suficientes y vecinos propios para fortificar.\n";
+            } else {
+              cout << "\nDesde que territorio quieres mover unidades?\n";
+              for (size_t i = 0; i < territoriosDisponibles.size(); i++) {
+                cout << i + 1 << ". " << territoriosDisponibles[i]->nombre 
+                     << " (" << territoriosDisponibles[i]->numEjercitos << " tropas)\n";
+              }
+
+              while (opcion <= 0 || opcion > (int)territoriosDisponibles.size()) {
+                cin >> opcion;
+                if (opcion <= 0 || opcion > (int)territoriosDisponibles.size()) {
+                  cout << "Error: Opcion invalida. Intenta de nuevo: ";
+                }
+              }
+
+              a = territoriosDisponibles[opcion - 1];
+
+              cout << "\nHacia que vecino quieres fortificar?\n";
+              for (int i = 0; i < a->vecinos.longitud(); i++) {
+                if (a->vecinos.obtener(i)->colorOcupante == jugadorActual->color) {
+                  vecinosDisponibles.push_back(a->vecinos.obtener(i));
+                }
+              }
+
+              for (size_t i = 0; i < vecinosDisponibles.size(); i++) {
+                cout << i + 1 << ". " << vecinosDisponibles[i]->nombre 
+                     << " (" << vecinosDisponibles[i]->numEjercitos << " tropas)\n";
+              }
+
+              opcion = 0;
+              while (opcion <= 0 || opcion > (int)vecinosDisponibles.size()) {
+                cin >> opcion;
+                if (opcion <= 0 || opcion > (int)vecinosDisponibles.size()) {
+                  cout << "Error: Opcion invalida. Intenta de nuevo: ";
+                }
+              }
+
+              b = vecinosDisponibles[opcion - 1];
+
+              int maxTropas = a->numEjercitos - 1;
+              int num = 0;
+              cout << "¿Cuantas tropas deseas mover? (1 a " << maxTropas << "): ";
+              while (num <= 0 || num > maxTropas) {
+                cin >> num;
+                if (num <= 0 || num > maxTropas) {
+                  cout << "Error: Opcion invalida. Intenta de nuevo: ";
+                }
+              }
+
+              a->modificarEjercitos(-num);
+              b->modificarEjercitos(num);
+
+              cout << "Has movido " << num << " tropas de " << a->nombre << " a " << b->nombre << ".\n";
+            }
+          }
+          
+          cin.clear();
+          cin.ignore(10000, '\n');
           cout << "(Comando correcto) El jugador " << args[0]
                << " ha terminado de fortificar su posición.\n";
           // Al terminar la fortificación, finaliza el turno del jugador actual
           juego.pasarAlSiguienteTurno();
+          jugadorHaAtacado = false;
         }
       } else {
         cout << "Error: Numero de parametros incorrecto.\n";
@@ -497,6 +696,19 @@ int main() {
     // ==========================================
     // COMANDO: estado_juego
     // ==========================================
+    /*
+    ===================================================================================
+    verificaciones globales:
+    1. El juego esta inicializado.
+    2. El juego no ha terminado.
+
+    Funcionamiento (Paso a paso):
+    1. Imprime el numero de jugadores, nombres y colores de cada uno.
+    2. Imprime el jugador con el turno actual.
+    3. Imprime la lista de los territorios, mostrando el color del jugador que lo controla
+       y la cantidad de unidades que hay ubicadas en cada uno.
+    ===================================================================================
+    */
     else if (comando == "estado_juego") {
       if (args.empty()) {
         if (!is_initialized) {
@@ -537,6 +749,16 @@ int main() {
     // ==========================================
     // COMANDO: salir
     // ==========================================
+    /*
+    ===================================================================================
+    verificaciones globales:
+    - No requiere validaciones de estado de juego (siempre debe poder salir).
+
+    Funcionamiento (Paso a paso):
+    1. Establece la bandera is_running en false.
+    2. Finaliza la ejecucion del ciclo REPL y de la aplicacion.
+    ===================================================================================
+    */
     else if (comando == "salir") {
       if (args.empty()) {
         is_running = false; // Finaliza la bandera de ejecución del REPL
@@ -548,6 +770,17 @@ int main() {
     // ==========================================
     // COMANDO: guardar
     // ==========================================
+    /*
+    ===================================================================================
+    verificaciones globales:
+    1. El juego esta inicializado.
+
+    Funcionamiento (Paso a paso):
+    (Para la Entrega 2)
+    1. Guarda el estado actual del juego en un archivo de texto con el mismo formato
+       utilizado en la inicializacion.
+    ===================================================================================
+    */
     else if (comando == "guardar") {
       if (args.size() == 1) {
         if (!is_initialized) {
@@ -567,6 +800,17 @@ int main() {
     // ==========================================
     // COMANDO: guardar_comprimido
     // ==========================================
+    /*
+    ===================================================================================
+    verificaciones globales:
+    1. El juego esta inicializado.
+
+    Funcionamiento (Paso a paso):
+    (Para la Entrega 2)
+    1. Guarda el estado actual del juego utilizando el algoritmo de codificacion de 
+       Huffman en un archivo binario.
+    ===================================================================================
+    */
     else if (comando == "guardar_comprimido") {
       if (args.size() == 1) {
         if (!is_initialized) {
@@ -585,6 +829,19 @@ int main() {
     // ==========================================
     // COMANDO: costo_conquista
     // ==========================================
+    /*
+    ===================================================================================
+    verificaciones globales:
+    1. El juego esta inicializado.
+    2. El juego no ha terminado.
+
+    Funcionamiento (Paso a paso):
+    (Para la Entrega 3)
+    1. Calcula el costo y la secuencia de territorios a conquistar utilizando algoritmos
+       sobre grafos (como Dijkstra).
+    2. Indica el camino mas barato para conquistar el territorio indicado por el jugador.
+    ===================================================================================
+    */
     else if (comando == "costo_conquista") {
       // Valida 2 parámetros: jugador y territorio
       if (args.size() == 2) {
@@ -609,6 +866,18 @@ int main() {
     // ==========================================
     // COMANDO: conquista_mas_barata
     // ==========================================
+    /*
+    ===================================================================================
+    verificaciones globales:
+    1. El juego esta inicializado.
+    2. El juego no ha terminado.
+
+    Funcionamiento (Paso a paso):
+    (Para la Entrega 3)
+    1. Calcula la ruta de conquista que implique el menor numero de perdidas de ejercitos,
+       verificando todos los territorios posibles utilizando algoritmos sobre grafos.
+    ===================================================================================
+    */
     else if (comando == "conquista_mas_barata") {
       if (args.size() == 1) {
         if (!is_initialized) {
@@ -633,6 +902,17 @@ int main() {
     // ==========================================
     // COMANDO: ayuda
     // ==========================================
+    /*
+    ===================================================================================
+    verificaciones globales:
+    - No requiere validaciones de estado de juego (siempre debe mostrar ayuda).
+
+    Funcionamiento (Paso a paso):
+    1. Si no hay argumentos, llama a mostrar_ayuda() para listar todos los comandos.
+    2. Si hay un argumento, llama a mostrar_ayuda_comando(comando) para mostrar 
+       el uso y descripcion especifica de dicho comando.
+    ===================================================================================
+    */
     else if (comando == "ayuda") {
       if (args.empty()) {
         mostrar_ayuda();

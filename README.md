@@ -14,6 +14,12 @@ En esta etapa, el proyecto cuenta con un entorno interactivo de línea de comand
 
 *(Nota: La compresión con Árboles de Huffman y las estrategias de conquista con Grafos se incorporarán en las entregas 2 y 3 respectivamente).*
 
+## Documentación Técnica y Auditoría
+
+Para una revisión en profundidad de los requerimientos cumplidos, decisiones de diseño de software (TADs), justificación de las estructuras de datos lineales y el registro de correcciones de IA, por favor consulte el documento de auditoría de la entrega:
+
+- [Auditoría Técnica y Documentación - Entrega 1](docs/ENTREGA1_DOCUMENTACION.md)
+
 ## Instrucciones de Compilación y Ejecución
 
 El proyecto está diseñado para compilarse utilizando el compilador GNU C++ (`g++`).
