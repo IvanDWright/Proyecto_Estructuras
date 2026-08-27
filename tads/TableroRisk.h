@@ -11,7 +11,7 @@
 ================================================================================
 TAD: TableroRisk
 ================================================================================
-Creado por: Antigravity (IA)
+// codigo asistido por IA
 
 Descripción:
   Este TAD representa el mapa completo del juego Risk. Funciona como el

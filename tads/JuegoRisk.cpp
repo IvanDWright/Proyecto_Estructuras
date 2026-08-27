@@ -37,6 +37,7 @@ bool JuegoRisk::estaTerminado() const {
 }
 
 Jugador* JuegoRisk::obtenerJugadorEnTurno() {
+    // codigo asistido por IA
     if (estado != EN_CURSO || jugadores.estaVacia()) {
         return NULL;
     }
@@ -53,6 +54,7 @@ Jugador* JuegoRisk::buscarJugadorPorNombre(const std::string& nombreBuscado) {
 }
 
 void JuegoRisk::pasarAlSiguienteTurno() {
+    // codigo asistido por IA
     if (jugadores.estaVacia()) {
         return;
     }

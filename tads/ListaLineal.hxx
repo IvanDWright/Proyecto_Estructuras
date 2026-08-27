@@ -131,6 +131,7 @@ template <typename T> bool ListaLineal<T>::eliminarEn(int indice) {
 }
 
 template <typename T> void ListaLineal<T>::limpiar() {
+  // codigo asistido por IA
   Nodo<T> *actual = cabeza;
   while (actual != nullptr) {
     Nodo<T> *siguiente = actual->siguiente;

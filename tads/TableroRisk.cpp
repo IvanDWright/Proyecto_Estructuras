@@ -3,7 +3,7 @@
 ================================================================================
 TAD: TableroRisk
 ================================================================================
-Creado por: Antigravity (IA)
+// codigo asistido por IA
 
 Descripción de la Implementación:
   Este archivo contiene la lógica completa para inicializar y gestionar el
