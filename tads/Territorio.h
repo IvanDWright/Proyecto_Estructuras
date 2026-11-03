@@ -4,48 +4,53 @@
 #include <string>
 #include "ListaLineal.h"
 
-/*
-===========================================================================================
-La clase Territorio representa un territorio del tablero de risk, este tiene cun codigo
-que identifica este, el nombre oficial de el territorio, el id de el continente al
-que pertenece, y la informacion de el ocupante de el territorio, el cual puede cambiar
-tiene un numero de cantidad de tropas y apuntadores a los territorios vecinos que es a los 
-que puede llamar. El constructor es por defecto vacio, pero existe otro que recibe el codigo
-como referencia y constante (igual que en los otros ejemplos es para que no se pueda editar 
-y no sea una copia de el dato) el nombre igual que el codigo, y ademas recibe el id del 
-continente al que pertenece.
-metodos:
-agregarVecino: 
-Agrega punteros a territorios vecinos que no estan registrados previamente.
-esVecinoDe: 
-Consulta si este territorio tiene frontera directa con el territorio del código dado
-asignarOcupante: 
-Asigna el jugador ocupante inicial y la cantidad de tropas
-modificarEjercitos: 
-Suma o resta tropas al territorio (delta positivo o negativo)
-========================================================================================
-*/
-
 class Territorio {
 public:
-    std::string codigo;                       // Código oficial (ej: "1.1", "2.3")
-    std::string nombre;                       // Nombre descriptivo (ej: "Alaska", "Brasil")
-    int continenteId;                         // ID del continente (1: Norteamérica, 2: Sudamérica, etc.)
-    std::string colorOcupante;                // Color del jugador dueño del territorio
-    int numEjercitos;                         // Cantidad de unidades de infantería en el territorio
-    ListaLineal<Territorio*> vecinos;         // Lista lineal de punteros a territorios adyacentes
+    // =========================================================================
+    // Atributos de Territorio
+    // =========================================================================
+    
+    std::string idTerritorio;                 // Código oficial que identifica el territorio (ej: "1.1", "2.3")
+    std::string nombreTerritorio;             // Nombre descriptivo oficial del territorio (ej: "Alaska", "Brasil")
+    int idContinente;                         // ID del continente al que pertenece (1: Norteamérica, 2: Sudamérica, etc.)
+    std::string colorPropietario;             // Color del jugador que ocupa actualmente el territorio
+    int cantidadTropas;                       // Cantidad de unidades de infantería apostadas en el territorio
+    ListaLineal<Territorio*> adyacentes;      // Lista lineal de punteros a los territorios vecinos que limitan con este
 
+    // =========================================================================
+    // Constructores
+    // =========================================================================
 
+    // Constructor por defecto, inicializa los valores en blanco o cero
     Territorio();
-    Territorio(const std::string& cod, const std::string& nom, int contId);
 
-    bool agregarVecino(Territorio* vecinoPtr);
+    // Constructor parametrizado: recibe el código como referencia constante (para que no sea copia y no sea editable),
+    // el nombre (igual que el código) y el ID del continente al que pertenece.
+    Territorio(const std::string& idTer, const std::string& nomTer, int idCont);
 
-    bool esVecinoDe(const std::string& codigoDestino) const;
+    // =========================================================================
+    // Métodos Principales
+    // =========================================================================
 
+    // Asigna el jugador ocupante inicial y la cantidad de tropas que se colocan
     void asignarOcupante(const std::string& nuevoColor, int cantidad);
 
+    // Suma o resta tropas al territorio (delta puede ser positivo o negativo)
     void modificarEjercitos(int delta);
+
+    // Agrega punteros a territorios vecinos que no están registrados previamente.
+    // Retorna true si se agregó con éxito.
+    bool agregarVecino(Territorio* ptrVecino);
+
+    // Consulta si este territorio tiene frontera directa con el territorio cuyo código es dado.
+    bool esVecinoDe(const std::string& idDestino) const;
+
+    // Indica si al menos un vecino pertenece a un jugador de color distinto al dado.
+    bool tieneVecinoEnemigo(const std::string& colorJugador) const;
+
+    // Indica si al menos un vecino pertenece al jugador del color dado.
+    bool tieneVecinoPropio(const std::string& colorJugador) const;
+
 };
 
 #endif // TERRITORIO_H

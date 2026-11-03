@@ -5,50 +5,42 @@
 #include "ListaLineal.h"
 #include "Territorio.h"
 
-/*
-================================================================================
-TAD: Continente
-================================================================================
-Se define su id, nombre (apuntador y const por las mismas razones que en Carta.h)
-bono de unidades y una lista de territorios (Es una lista de apuntadores a los territorios
-que pertenecen a cada continente asi puede capturar todas las modificaciones de los
-territorios, ya que no seran copias de cada lo que ahorra memoria). 
-
-Tiene constructor vacio para poder hacer
-
-continente c;
-
-*define los atributos despues*
-
-
-Valores Reglamentarios de Bonos:
-  - América del Sur: 2
-  - Australia: 2
-  - África: 3
-  - América del Norte: 5
-  - Europa: 5
-  - Asia: 7
-
-
-================================================================================
-*/
+// =========================================================================
+// TAD Continente
+// =========================================================================
 
 class Continente {
 public:
-    int id;                                   // ID numérico (1: NA, 2: SA, 3: EU, 4: AF, 5: AS, 6: OC)
-    std::string nombre;                       // Nombre oficial del continente
-    int bonoUnidades;                         // Tropas de bonificación otorgadas
-    ListaLineal<Territorio*> territorios;     // Punteros a los territorios del continente
+    // =========================================================================
+    // Atributos de Continente
+    // =========================================================================
+    
+    int idContinente;                             // ID numérico (1: NA, 2: SA, 3: EU, 4: AF, 5: AS, 6: OC)
+    std::string nombreContinente;                 // Nombre oficial del continente
+    int tropasAdicionales;                        // Tropas de bonificación otorgadas al conquistar el continente entero
+    ListaLineal<Territorio*> territoriosInternos; // Punteros a los territorios del continente, se usa punteros para evitar copias.
 
+    // =========================================================================
     // Constructores
+    // =========================================================================
+    
+    // Constructor vacío por defecto
     Continente();
-    Continente(int ID, const std::string& nom, int bono);
+    
+    // Constructor parametrizado con id, nombre y tropas adicionales.
+    Continente(int identificador, const std::string& nom, int bono);
 
-    // Agrega un territorio al continente
-    void agregarTerritorio(Territorio* t);
+    // =========================================================================
+    // Métodos Principales
+    // =========================================================================
 
     // Verifica si un jugador domina todos los territorios del continente
+    // Retorna true si el color del jugador corresponde a todos los territorios
     bool esControladoTotalmentePor(const std::string& colorJugador) const;
+
+    // Agrega un territorio al continente validando que no esté ya en la lista
+    void agregarTerritorio(Territorio* t);
+
 };
 
 #endif // CONTINENTE_H

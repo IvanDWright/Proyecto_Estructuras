@@ -3,34 +3,31 @@
 
 #include <string>
 
-/*
-=======================================================================================
-El tad de carta es algo que se le da a cada jugador cuando conquista un
-territorio, pero solamente tiene limite de 1 carta por turno, amenos que elimine
-a un jugador, lo cual le da el derecho de quedarse con todas las cartas del
-jugador eliminado.
-
-primero hay un enum de tipoTropa, que define las diferentes tropas que la carta
-puede tener.
-
-la clase carta como tal, incluye un string de codigoTerritorio y un tipoTropa.
-Esto ya que por cada territorio conquistado hay un acarta y se le otorga un tipo
-de tropa el constructor por defecto inicializa el codigoTerritorio en "" y el
-tipoTropa en INFANTERIA. recibe el tipo de tropa base a un const, el cual es
-const y una referencia para evitar que el codigo sea una copia de el dato
-original y que no se pueda modificar.
-=======================================================================================
-*/
-
+// Enum TipoTropa que define las diferentes tropas que la carta puede tener.
 enum TipoTropa { INFANTERIA, CABALLERIA, ARTILLERIA, COMODIN };
 
 class Carta {
 public:
-  std::string codigoTerritorio; // Código del territorio o "COMODIN"
-  TipoTropa tipo;               // Tipo de tropa que figura en la carta
+  // =========================================================================
+  // Atributos de Carta
+  // =========================================================================
+  
+  // Código del territorio (o "COMODIN"). Por cada territorio conquistado hay una carta.
+  std::string idAsociado;       
+  
+  // Tipo de tropa que figura en la carta (Infantería, Caballería, Artillería o Comodín).
+  TipoTropa clasificacion;      
 
-  Carta() : codigoTerritorio(""), tipo(INFANTERIA) {}
-  Carta(const std::string &cod, TipoTropa t) : codigoTerritorio(cod), tipo(t) {}
+  // =========================================================================
+  // Constructores
+  // =========================================================================
+
+  // Constructor por defecto, inicializa el idAsociado en "" y la clasificacion en INFANTERIA.
+  Carta() : idAsociado(""), clasificacion(INFANTERIA) {}
+
+  // Constructor parametrizado. Recibe el tipo de tropa en base a un const
+  // y una referencia para evitar copias y modificaciones.
+  Carta(const std::string &cod, TipoTropa t) : idAsociado(cod), clasificacion(t) {}
 };
 
 #endif // CARTA_H

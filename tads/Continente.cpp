@@ -1,45 +1,36 @@
 #include "Continente.h"
 
-/*
-===========================================================================================
-Funciones:
+// Constructor por defecto, inicializa los atributos en cero o vacio; Recibe: nada; Retorna: nada
+Continente::Continente() : idContinente(0), nombreContinente(""), tropasAdicionales(0) {}
 
-1. Constructores: Uno que por default esta vacio, otro que recibe el id, nombre y bono. (por
-lo mismo que otros ejemplos es referencia y const)
-2. agregarTerritorio: Recibe un puntero a un territorio y lo agrega a la lista, esto lo hace
-si y solo si no esta dentro de la lista de territorios, lo cual rrevisa mediante el for,
-despues si no esta agrega al final de la lista.
-3. esControladoTotalmentePor: Consulta si un jugador domina todos los territorios del
-continente, para esto recorre la lista de territorios y revisa si todos los territorios son
-posesion del jugador.
-===========================================================================================
-*/
-
-Continente::Continente() : id(0), nombre(""), bonoUnidades(0) {}
-
+// Constructor parametrizado; Recibe: int identificador, const string& nom, int bono; Retorna: nada
 Continente::Continente(int identificador, const std::string& nom, int bono)
-    : id(identificador), nombre(nom), bonoUnidades(bono) {}
+    : idContinente(identificador), nombreContinente(nom), tropasAdicionales(bono) {}
 
-void Continente::agregarTerritorio(Territorio* t) {
-    if (t != NULL) {
-        for (int i = 0; i < territorios.longitud(); i++) {
-            if (territorios.obtener(i) == t) {
-                return;
-            }
-        }
-        territorios.agregarAlFinal(t);
-    }
-}
-
+// Consulta si un jugador domina todos los territorios del continente; Recibe: const string& colorJugador; Retorna: bool
+// Recorre la lista de territorios internos y revisa si todos son posesion del jugador dado.
 bool Continente::esControladoTotalmentePor(const std::string& colorJugador) const {
-    if (territorios.estaVacia() || colorJugador.empty()) {
+    if (territoriosInternos.estaVacia() || colorJugador.empty()) {
         return false;
     }
 
-    for (int i = 0; i < territorios.longitud(); i++) {
-        if (territorios.obtener(i)->colorOcupante != colorJugador) {
+    for (int i = 0; i < territoriosInternos.longitud(); i++) {
+        if (territoriosInternos.obtener(i)->colorPropietario != colorJugador) {
             return false;
         }
     }
     return true;
+}
+
+// Agrega un territorio al continente; Recibe: Territorio* t; Retorna: void
+// Valida que el puntero no sea nulo y que no se encuentre ya registrado en la lista interna.
+void Continente::agregarTerritorio(Territorio* t) {
+    if (t != NULL) {
+        for (int i = 0; i < territoriosInternos.longitud(); i++) {
+            if (territoriosInternos.obtener(i) == t) {
+                return;
+            }
+        }
+        territoriosInternos.agregarAlFinal(t);
+    }
 }

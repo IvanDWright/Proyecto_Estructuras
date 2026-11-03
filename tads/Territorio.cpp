@@ -1,65 +1,78 @@
 #include "Territorio.h"
 
-/*
-===========================================================================================
-Funciones:
-
-1. constructores: Uno es un constructor que esta por default vacio y otro recibe el codigo,
-nombre, id del contienente, color del ocupante, y cantidad de ejercitos.
-2. agregarVecino: Recibe un puntero a un territorio, primero revisa si es nulo o igual a el 
-territorio al cual vamos a anadir el vecino retornamos false. si no es ninguno de los 2
-revisa si el puntero ya es de uno de los vecinos, en caso de serlo retorna false. de caso
-de no serlo se agrega al final de la lista y se retorna true. (recibe una const T& ya que
-no queremos que sea editado y que no sea una copia) este metodo retorna un bool.
-3. esVecinoDe: Reecibe una referencia constante a el codigo de un territorio y revisa 
-si es vecino de este, primero revisa si ese codigo no es nulo o es de el mismo territorio,
-en caso de que lo sea retorna false, en caso de que no revisa la lista de vecinos, si 
-esta adentro de la lista retorna true, y si no retorna false.
-4. asignarOcupante: Recibe una referencia constante a el color de el nuevo ocupante y la 
-cantidad de ejercitos.
-5. modificarEjercitos: Recibe un entero que es la cantidad de ejercitos a modificar.
-===========================================================================================
-*/
-
+// Constructor por defecto, inicializa los valores en blanco o cero
 Territorio::Territorio() 
-    : codigo(""), nombre(""), continenteId(0), colorOcupante(""), numEjercitos(0) {}
+    : idTerritorio(""), nombreTerritorio(""), idContinente(0), colorPropietario(""), cantidadTropas(0) {}
 
-Territorio::Territorio(const std::string& cod, const std::string& nom, int contId)
-    : codigo(cod), nombre(nom), continenteId(contId), colorOcupante(""), numEjercitos(0) {}
+// Constructor parametrizado: recibe el código como referencia constante (para que no sea copia y no sea editable),
+// el nombre (igual que el código) y el ID del continente al que pertenece.
+Territorio::Territorio(const std::string& idTer, const std::string& nomTer, int idCont)
+    : idTerritorio(idTer), nombreTerritorio(nomTer), idContinente(idCont), colorPropietario(""), cantidadTropas(0) {}
 
-bool Territorio::agregarVecino(Territorio* vecinoPtr) {
-    if (vecinoPtr == NULL || vecinoPtr == this) {
+// Asigna el jugador ocupante inicial (recibe una referencia constante al color del nuevo ocupante)
+// y la cantidad de ejércitos a ubicar.
+void Territorio::asignarOcupante(const std::string& nuevoColor, int cantidad) {
+    colorPropietario = nuevoColor;
+    cantidadTropas = cantidad;
+}
+
+// Modifica la cantidad de ejércitos actuales. Recibe un entero que es la cantidad de ejércitos a modificar.
+void Territorio::modificarEjercitos(int delta) {
+    cantidadTropas += delta;
+}
+
+// Recibe un puntero a un territorio para agregar a los adyacentes. 
+// Primero revisa si es nulo o igual al territorio actual, si lo es retorna false. 
+// Revisa si el puntero ya está en la lista de adyacentes, en caso de serlo retorna false. 
+// Si pasa las validaciones, se agrega al final de la lista y se retorna true. 
+// Recibe un puntero (que es tratado sin modificar el dato).
+bool Territorio::agregarVecino(Territorio* ptrVecino) {
+    if (ptrVecino == NULL || ptrVecino == this) {
         return false;
     }
 
-    // Verificar si ya fue agregado previamente para evitar duplicados
-    for (int i = 0; i < vecinos.longitud(); i++) {
-        if (vecinos.obtener(i)->codigo == vecinoPtr->codigo) {
+    // Verificar si ya fue agregado previamente para evitar duplicados en la frontera
+    for (int i = 0; i < adyacentes.longitud(); i++) {
+        if (adyacentes.obtener(i)->idTerritorio == ptrVecino->idTerritorio) {
             return false;
         }
     }
 
-    vecinos.agregarAlFinal(vecinoPtr);
+    adyacentes.agregarAlFinal(ptrVecino);
     return true;
 }
 
-bool Territorio::esVecinoDe(const std::string& codigoDestino) const {
-    if (codigoDestino == "" || codigoDestino==this->codigo) {
+// Recibe una referencia constante al código de un territorio y revisa si es vecino de este.
+// Primero revisa si ese código no es nulo o es del mismo territorio, en caso de que lo sea retorna false.
+// En caso de que no, revisa la lista de vecinos, si está adentro de la lista retorna true, si no retorna false.
+bool Territorio::esVecinoDe(const std::string& idDestino) const {
+    if (idDestino == "" || idDestino == this->idTerritorio) {
         return false;
     }
-    for (int i = 0; i < vecinos.longitud(); i++) {
-        if (vecinos.obtener(i)->codigo == codigoDestino) {
+    for (int i = 0; i < adyacentes.longitud(); i++) {
+        if (adyacentes.obtener(i)->idTerritorio == idDestino) {
             return true;
         }
     }
     return false;
 }
 
-void Territorio::asignarOcupante(const std::string& nuevoColor, int cantidad) {
-    colorOcupante = nuevoColor;
-    numEjercitos = cantidad;
+// Revisa si algun vecino tiene un color de propietario distinto al recibido; Recibe: const string& colorJugador; Retorna: bool
+bool Territorio::tieneVecinoEnemigo(const std::string& colorJugador) const {
+    for (int i = 0; i < adyacentes.longitud(); i++) {
+        if (adyacentes.obtener(i)->colorPropietario != colorJugador) {
+            return true;
+        }
+    }
+    return false;
 }
 
-void Territorio::modificarEjercitos(int delta) {
-    numEjercitos += delta;
+// Revisa si algun vecino tiene el mismo color de propietario que el recibido; Recibe: const string& colorJugador; Retorna: bool
+bool Territorio::tieneVecinoPropio(const std::string& colorJugador) const {
+    for (int i = 0; i < adyacentes.longitud(); i++) {
+        if (adyacentes.obtener(i)->colorPropietario == colorJugador) {
+            return true;
+        }
+    }
+    return false;
 }

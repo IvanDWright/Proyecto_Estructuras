@@ -1,37 +1,53 @@
 # Proyecto de Estructuras de Datos - Sistema de Apoyo para Risk
 
-Este proyecto implementa un sistema de apoyo interactivo para el clásico juego de mesa **Risk**, diseñado para la asignatura de Estructuras de Datos. 
+Sistema de apoyo interactivo, por línea de comandos, para el juego de mesa **Risk**. Proyecto de la asignatura Estructuras de Datos (Pontificia Universidad Javeriana, Departamento de Ingeniería de Sistemas).
 
-Actualmente, el proyecto refleja los requisitos de la **Entrega 1**, enfocada en el **Componente 1: Configuración del juego** implementado a partir de estructuras lineales.
+**Autores:** Ivan David Wright Gaviria y Juan Sebastián Martínez Gómez.
 
-## Características de la Entrega 1
+## Estado del proyecto
 
-En esta etapa, el proyecto cuenta con un entorno interactivo de línea de comandos (REPL) y la lógica inicial del juego con las siguientes características:
-- **Consola Interactiva:** Un ciclo infinito que lee entradas del usuario tras el prompt `$ `.
-- **Validación y Estructuras Lineales:** Los comandos principales del juego (`inicializar`, `obtener_unidades`, `atacar`, `fortificar`, `estado_juego`) validan sus parámetros y comienzan a incorporar la lógica por turnos usando estructuras de datos lineales.
-- **Sistema Integrado:** Todos los componentes se gestionan desde un mismo programa unificado.
-- **Mensajes de Interfaz:** Respuestas adaptadas a cada comando (mensajes de éxito, advertencia de "juego no inicializado" y control de errores por parámetros inválidos).
+| Entrega | Contenido | Estado |
+|---|---|---|
+| Entrega 1 | Componente 1: configuración del juego con estructuras lineales | Completa |
+| **Entrega 2** | **Componente 2: almacenamiento de partidas con árbol de Huffman**, y correcciones de la Entrega 1 | **Completa (rama `entrega_2`)** |
+| Entrega 3 | Componente 3: estrategias de conquista con grafos | Pendiente |
 
-*(Nota: La compresión con Árboles de Huffman y las estrategias de conquista con Grafos se incorporarán en las entregas 2 y 3 respectivamente).*
+## Características
 
-## Documentación Técnica y Auditoría
+### Componente 1: configuración del juego (estructuras lineales)
+- **Consola interactiva (REPL):** ciclo de lectura de comandos tras el prompt `$ `.
+- **Estructuras lineales propias:** los TADs del dominio usan la plantilla `ListaLineal<T>` (nodos y punteros), sin contenedores de la STL en el modelo del dominio. La STL se limita al análisis de texto de la consola en `main.cpp`.
+- **Reglas del juego:** refuerzos (`max(3, territorios / 3)` más bono de continentes), combate con dados, invasión de territorios, fortificación por adyacencia y rotación de turnos.
+- **Lógica en los TADs:** en la Entrega 2 la lógica de juego se trasladó de `main.cpp` a los TADs (`JuegoRisk`, `TableroRisk`, `Jugador`, `Territorio`, `Continente`).
 
-Para una revisión en profundidad de los requerimientos cumplidos, decisiones de diseño de software (TADs), justificación de las estructuras de datos lineales y el registro de correcciones de IA, por favor consulte el documento de auditoría de la entrega:
+### Componente 2: almacenamiento de partidas (árbol de Huffman)
+- `guardar <archivo>`: guarda el estado de la partida en texto plano.
+- `guardar_comprimido <archivo>`: guarda la partida comprimida con **codificación de Huffman** en un archivo binario `.bin`.
+- `inicializar <archivo>`: carga una partida desde un archivo de texto o desde un `.bin` comprimido (si la partida ya fue inicializada, el comando lo avisa y no recarga).
+- Nuevos TADs: `NodoHuffman`, `ColaPrioridad` (cola de prioridad propia para construir el árbol), `ArbolHuffman` (construcción, codificación y decodificación) y `ArchivoHuffman` (lectura y escritura del formato binario).
+- Nota: en partidas pequeñas el `.bin` puede pesar un poco más que el texto original, porque guarda la tabla de frecuencias para poder decodificar.
 
+### Componente 3: grafos (Entrega 3)
+Los comandos `costo_conquista` y `conquista_mas_barata` existen como *stubs*: validan la entrada y muestran un mensaje genérico. Su lógica con grafos se implementará en la Entrega 3.
+
+## Documentación
+
+- [Documento de diseño y plan de pruebas - Entrega 2 (PDF)](docs/Proyecto_Risk_Entrega2.pdf): acta de evaluación de la Entrega 1, diseño de comandos y TADs, esquemáticos de Huffman y del archivo binario, plan de pruebas, decisiones de diseño y registro de prompts de IA.
 - [Auditoría Técnica y Documentación - Entrega 1](docs/ENTREGA1_DOCUMENTACION.md)
+- Otros documentos en `docs/`: requisitos de la Entrega 1, TADs de la Entrega 1 y documentación de la Entrega 0.
 
-## Instrucciones de Compilación y Ejecución
+## Compilación y ejecución
 
-El proyecto está diseñado para compilarse utilizando el compilador GNU C++ (`g++`).
+El proyecto se compila con GNU C++ (`g++`). Desde la raíz del repositorio:
 
 ### 1. Compilar
-Abre tu terminal en el directorio raíz del proyecto y ejecuta:
 ```bash
-g++ src/main.cpp -I tads -o risk_app
+g++ -std=c++17 -Wall -Wextra src/main.cpp tads/*.cpp -I tads -o risk_app
 ```
 
+El código también compila en los modos C++98 y C++11. En Windows se puede usar MinGW-w64.
+
 ### 2. Ejecutar
-Una vez compilado, puedes iniciar la consola interactiva:
 
 **En Windows:**
 ```bash
@@ -43,26 +59,35 @@ Una vez compilado, puedes iniciar la consola interactiva:
 ./risk_app
 ```
 
-## Estructura del Proyecto
+### 3. Ejemplo rápido
+```text
+$ inicializar data/archivo_inicio.txt
+$ estado_juego
+$ guardar_comprimido partida.bin
+$ salir
+```
+En una sesión nueva, `inicializar partida.bin` recupera la misma partida.
 
-- `tads/`: Implementación e interfaces de los Tipos Abstractos de Datos (`.h`, `.hxx`, `.cpp`).
-- `src/`: Código fuente principal de la aplicación (`main.cpp`).
-- `docs/`: Documentación, requisitos y especificaciones del proyecto (`.md`).
-- `data/`: Archivos de prueba y datos de inicio (`.txt`).
+## Estructura del proyecto
 
-## Lista de Comandos Disponibles
+- `src/`: programa principal (`main.cpp`).
+- `tads/`: Tipos Abstractos de Datos (`.h`, `.hxx`, `.cpp`), incluidos los de Huffman.
+- `data/`: archivos de partida de ejemplo (`.txt`).
+- `docs/`: documentación, requisitos y especificaciones.
 
-Dentro de la aplicación (cuando veas el prompt `$ `), puedes escribir:
+## Lista de comandos
 
-- `ayuda`: Muestra la lista general de todos los comandos soportados.
-- `ayuda <comando>`: Despliega la sintaxis correcta y descripción de un comando en particular.
-- `inicializar <archivo_inicio>`: Inicializa la partida cargando un archivo de texto o comprimido.
-- `obtener_unidades <nombre_jugador>`: Permite al jugador reclamar unidades extra.
-- `atacar <nombre_jugador>`: Inicia el flujo de ataque hacia territorios enemigos.
-- `fortificar <nombre_jugador>`: Mueve unidades entre territorios propios.
-- `estado_juego`: Imprime en pantalla la situación actual (jugadores, territorios y unidades).
-- `guardar <nombre_archivo>`: Exporta el estado actual en formato de texto plano.
-- `guardar_comprimido <nombre_archivo>`: Exporta el estado actual comprimido mediante Huffman.
-- `costo_conquista <nombre_jugador> <territorio>`: Calcula con grafos la ruta óptima a conquistar.
-- `conquista_mas_barata <nombre_jugador>`: Indica cuál es la conquista que implica la menor pérdida posible.
-- `salir`: Termina la ejecución y cierra el programa.
+Dentro de la aplicación (cuando veas el prompt `$ `):
+
+- `ayuda`: muestra la lista de comandos.
+- `ayuda <comando>`: muestra la sintaxis y la descripción de un comando.
+- `inicializar <archivo>`: inicia la partida cargándola desde un archivo de texto o comprimido (`.bin`).
+- `obtener_unidades <nombre_jugador>`: el jugador reclama sus unidades de refuerzo.
+- `atacar <nombre_jugador>`: inicia el flujo de ataque contra territorios enemigos.
+- `fortificar <nombre_jugador>`: mueve unidades entre territorios propios.
+- `estado_juego`: muestra jugadores, turno, territorios y unidades.
+- `guardar <nombre_archivo>`: guarda el estado en texto plano.
+- `guardar_comprimido <nombre_archivo>`: guarda el estado comprimido con Huffman.
+- `costo_conquista <nombre_jugador> <territorio>`: ruta de conquista (Entrega 3, aún sin lógica).
+- `conquista_mas_barata <nombre_jugador>`: conquista de menor costo (Entrega 3, aún sin lógica).
+- `salir`: termina el programa.
