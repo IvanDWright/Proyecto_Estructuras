@@ -1,3 +1,9 @@
 Requisitos_Entrega_0.md
 Pseudocodigo_Comandos_Entrega_1.md
 
+
+# Binarios y archivos de compilacion
+risk_app
+*.exe
+*.o
+*.out
