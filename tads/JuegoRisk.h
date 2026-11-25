@@ -2,10 +2,10 @@
 #define JUEGORISK_H
 
 #include <string>
-#include <vector>
 #include "ListaLineal.h"
 #include "Jugador.h"
 #include "TableroRisk.h"
+#include "Grafo.h"
 
 // Define los diferentes estados del juego
 enum EstadoJuego {
@@ -20,7 +20,32 @@ enum ResultadoInicializacion {
     INICIALIZACION_CORRECTA,
     INICIALIZACION_ARCHIVO_ERRONEO,   // No se encuentra o no puede leerse
     INICIALIZACION_ARCHIVO_VACIO,     // No contiene información
-    INICIALIZACION_SIN_FORMATO        // No contiene información en el formato esperado
+    INICIALIZACION_SIN_FORMATO,       // No contiene información en el formato esperado
+    // [IA] Valor agregado con Claude (Prompt 16, Apendice A: "inicializar debe poder cargar un
+    // archivo generado por guardar"). Texto con el formato correcto cuyas unidades ya no son
+    // las iniciales (35/30/25/20): se carga como una partida en curso.
+    INICIALIZACION_PARTIDA_EN_CURSO
+};
+
+// TAD ResultadoConquista: resultado del calculo de rutas de conquista sobre grafos (Componente 3).
+struct ResultadoConquista {
+    bool valido;                            // true si se encontro una conquista valida
+    bool yaControlado;                      // true si el territorio destino ya pertenece al jugador
+    int costoUnidades;                      // Total de unidades enemigas a conquistar en el camino
+    std::string codigoOrigen;               // Codigo del territorio propio desde donde se inicia el ataque
+    std::string codigoDestino;              // Codigo del territorio destino a conquistar
+    ListaLineal<std::string> rutaCodigos;   // Secuencia completa de codigos [origen, ..., destino]
+
+    ResultadoConquista()
+        : valido(false), yaControlado(false), costoUnidades(0),
+          codigoOrigen(""), codigoDestino("") {}
+
+    bool esValido() const { return valido; }
+    bool estaYaControlado() const { return yaControlado; }
+    int obtenerCostoUnidades() const { return costoUnidades; }
+    std::string obtenerCodigoOrigen() const { return codigoOrigen; }
+    std::string obtenerCodigoDestino() const { return codigoDestino; }
+    const ListaLineal<std::string>& obtenerRutaCodigos() const { return rutaCodigos; }
 };
 
 // =========================================================================
@@ -73,6 +98,7 @@ public:
     
     // Busca un jugador por nombre.
     Jugador* buscarJugadorPorNombre(const std::string& nombreBuscado);
+    const Jugador* buscarJugadorPorNombre(const std::string& nombreBuscado) const;
 
     // Pasa al siguiente turno circularmente.
     void pasarAlSiguienteTurno();
@@ -109,7 +135,7 @@ public:
     // dadosDef) y compara por pares: gana el atacante solo si su dado es estrictamente mayor.
     // Descuenta las bajas de tropasAtq y tropasDef.
     void resolverRondaCombate(int& tropasAtq, int& tropasDef,
-                              std::vector<int>& dadosAtq, std::vector<int>& dadosDef);
+                              ListaLineal<int>& dadosAtq, ListaLineal<int>& dadosDef);
 
     // Registra la conquista de 'destino' por el jugador con 'tropas' tropas, marca que el
     // jugador conquisto en el turno y verifica si gano la partida. Retorna true si ganó.
@@ -151,13 +177,16 @@ public:
     // Configura la partida a partir de un texto con el formato del archivo de
     // inicialización. Valida el formato y, si validarSumaInicial es true, que cada jugador
     // tenga la suma inicial de unidades (35/30/25/20). Retorna true si el texto es correcto;
-    // si no, deja el juego vacío (sin inicializar) y retorna false.
+    // si el texto es invalido retorna false y el juego queda exactamente como estaba antes
+    // de la llamada.
     // [IA] Parametro validarSumaInicial agregado con Claude (Prompt 13, Apendice A).
     bool cargarDesdeTexto(const std::string& contenido, bool validarSumaInicial = true);
-    // Si el texto es invalido, el juego queda exactamente como estaba antes de la llamada.
 
-    // Inicializa el juego leyendo un archivo de texto plano o un archivo binario
-    // comprimido con Huffman (si su nombre termina en ".bin"). Retorna el resultado de la lectura.
+    // Inicializa el juego leyendo un archivo de texto plano o un archivo binario comprimido
+    // con Huffman. Si el nombre termina en ".bin" se intenta primero como comprimido y luego
+    // como texto; con otra extension, primero como texto y luego como comprimido.
+    // Un texto que solo falla por la suma inicial (partida generada por guardar) se carga
+    // como partida en curso. Retorna el resultado de la lectura.
     ResultadoInicializacion inicializarDesdeArchivo(const std::string& nombreArchivo);
 
     // Genera el texto del estado actual de la partida, con el mismo formato del
@@ -171,6 +200,26 @@ public:
     // Guarda el estado de la partida en un archivo binario comprimido con Huffman.
     // Retorna true si se pudo codificar y guardar.
     bool guardarEnComprimido(const std::string& nombreArchivo) const;
+
+    // =========================================================================
+    // Metodos de estrategias de juego sobre grafos (Componente 3)
+    // =========================================================================
+
+    // Construye el grafo dirigido y ponderado del tablero desde la perspectiva del color dado.
+    // Cada arista hacia un territorio enemigo tiene como peso las unidades que lo defienden
+    // (0 si el destino es propio), y guarda en 'origenes' los indices de los territorios del jugador.
+    void construirGrafoEstrategia(const std::string& colorJugador,
+                                  Grafo& grafo,
+                                  ListaLineal<int>& origenes) const;
+
+    // Calcula el costo minimo y la secuencia de territorios para que 'nombreJugador' conquiste
+    // 'idTerritorioDestino' partiendo desde su territorio controlado mas cercano.
+    ResultadoConquista calcularCostoConquista(const std::string& nombreJugador,
+                                              const std::string& idTerritorioDestino) const;
+
+    // Calcula cual territorio enemigo implica la menor perdida (conquista) de unidades de ejercito
+    // para 'nombreJugador' entre todos los territorios posibles del tablero.
+    ResultadoConquista calcularConquistaMasBarata(const std::string& nombreJugador) const;
 
 private:
     // Lee y valida el texto sobre un juego recien creado (la usa cargarDesdeTexto).

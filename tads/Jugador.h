@@ -29,8 +29,8 @@ public:
     // Color que se usa al momento de asignar un dueño de un territorio específico
     std::string colorFicha;                        
     
-    // Cartas las cuales se le otorgan al jugador cuando elimina a otro 
-    // o cuando obtiene un territorio (límite de 1 por turno en este caso).
+    // Cartas que se le otorgan al jugador cuando conquista al menos un territorio
+    // en su turno (límite de 1 carta por turno).
     ListaLineal<Carta> manoCartas;               
     
     // Define el estado del turno actual

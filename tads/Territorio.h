@@ -51,6 +51,14 @@ public:
     // Indica si al menos un vecino pertenece al jugador del color dado.
     bool tieneVecinoPropio(const std::string& colorJugador) const;
 
+    // Llena 'resultado' con punteros a los vecinos ocupados por otro jugador.
+    void vecinosEnemigos(const std::string& colorJugador,
+                         ListaLineal<Territorio*>& resultado) const;
+
+    // Llena 'resultado' con punteros a los vecinos ocupados por el jugador dado.
+    void vecinosPropios(const std::string& colorJugador,
+                        ListaLineal<Territorio*>& resultado) const;
+
 };
 
 #endif // TERRITORIO_H

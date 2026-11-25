@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
@@ -117,13 +116,13 @@ bool leerEntero(int &valor) {
   return (ss >> valor) && !(ss >> sobrante);
 }
 
-// Busca un territorio en un vector segun su codigo oficial; Recibe: const vector<Territorio*>& lista, const string& codigo; Retorna: Territorio*
+// Busca un territorio en una lista segun su codigo oficial; Recibe: const ListaLineal<Territorio*>& lista, const string& codigo; Retorna: Territorio*
 // Retorna el puntero al territorio encontrado o NULL si no existe en la lista.
-Territorio *buscarTerritorioPorCodigo(const vector<Territorio *> &lista,
+Territorio *buscarTerritorioPorCodigo(const ListaLineal<Territorio *> &lista,
                                       const string &codigo) {
-  for (size_t i = 0; i < lista.size(); ++i) {
-    if (lista[i]->idTerritorio == codigo) {
-      return lista[i];
+  for (int i = 0; i < lista.longitud(); ++i) {
+    if (lista.obtener(i)->idTerritorio == codigo) {
+      return lista.obtener(i);
     }
   }
   return NULL;
@@ -140,29 +139,31 @@ se queda sin tropas o decide parar, el defensor mantiene el territorio.
 */
 bool atacar(JuegoRisk &juego, int &tropas_atacantes, int &tropas_defensores) {
   while (tropas_atacantes > 0 && tropas_defensores > 0) {
-    vector<int> tiradas_atacante;
-    vector<int> tiradas_defensor;
+    ListaLineal<int> tiradas_atacante;
+    ListaLineal<int> tiradas_defensor;
 
     // La ronda completa (dados y bajas) se resuelve dentro del TAD
     juego.resolverRondaCombate(tropas_atacantes, tropas_defensores,
                                tiradas_atacante, tiradas_defensor);
 
     cout << "\n[!] Lanzamiento de dados...\n";
-    cout << "Atacante tira " << tiradas_atacante.size() << " dado(s):\n";
-    for (size_t i = 0; i < tiradas_atacante.size(); ++i) {
-      cout << "  - Dado " << i + 1 << ": " << tiradas_atacante[i] << "\n";
+    cout << "Atacante tira " << tiradas_atacante.longitud() << " dado(s):\n";
+    for (int i = 0; i < tiradas_atacante.longitud(); ++i) {
+      cout << "  - Dado " << i + 1 << ": " << tiradas_atacante.obtener(i) << "\n";
     }
-    cout << "Defensor tira " << tiradas_defensor.size() << " dado(s):\n";
-    for (size_t i = 0; i < tiradas_defensor.size(); ++i) {
-      cout << "  - Dado " << i + 1 << ": " << tiradas_defensor[i] << "\n";
+    cout << "Defensor tira " << tiradas_defensor.longitud() << " dado(s):\n";
+    for (int i = 0; i < tiradas_defensor.longitud(); ++i) {
+      cout << "  - Dado " << i + 1 << ": " << tiradas_defensor.obtener(i) << "\n";
     }
 
-    size_t duelos = min(tiradas_atacante.size(), tiradas_defensor.size());
+    int duelos = tiradas_atacante.longitud() < tiradas_defensor.longitud()
+                     ? tiradas_atacante.longitud()
+                     : tiradas_defensor.longitud();
     cout << "\n--- Resultados de los duelos ---\n";
-    for (size_t i = 0; i < duelos; ++i) {
-      cout << "Duelo " << i + 1 << ": Atacante (" << tiradas_atacante[i]
-           << ") vs Defensor (" << tiradas_defensor[i] << ") -> ";
-      if (tiradas_atacante[i] > tiradas_defensor[i]) {
+    for (int i = 0; i < duelos; ++i) {
+      cout << "Duelo " << i + 1 << ": Atacante (" << tiradas_atacante.obtener(i)
+           << ") vs Defensor (" << tiradas_defensor.obtener(i) << ") -> ";
+      if (tiradas_atacante.obtener(i) > tiradas_defensor.obtener(i)) {
         cout << "El defensor pierde 1 tropa.\n";
       } else {
         cout << "El atacante pierde 1 tropa.\n";
@@ -191,6 +192,31 @@ bool atacar(JuegoRisk &juego, int &tropas_atacantes, int &tropas_defensores) {
 
   cout << "El defensor mantiene el territorio por ahora.\n";
   return false;
+}
+
+// Formatea un territorio mostrando su codigo oficial y su nombre;
+// Recibe: const TableroRisk& tablero, const string& codigo; Retorna: string
+string etiquetaTerritorio(const TableroRisk &tablero, const string &codigo) {
+  const Territorio *ter = tablero.obtenerTerritorioPorId(codigo);
+  if (ter == NULL) {
+    return codigo;
+  }
+  return ter->idTerritorio + " (" + ter->nombreTerritorio + ")";
+}
+
+// Formatea la lista de territorios intermedios de una ruta [origen, ..., destino];
+// Recibe: const TableroRisk& tablero, const ListaLineal<string>& ruta; Retorna: string
+// Si la ruta es directa (tamano 2) retorna cadena vacia; si hay intermedios los une con ", ".
+string formatearIntermedios(const TableroRisk &tablero,
+                            const ListaLineal<string> &ruta) {
+  string texto = "";
+  for (int i = 1; i + 1 < ruta.longitud(); ++i) {
+    if (!texto.empty()) {
+      texto += ", ";
+    }
+    texto += etiquetaTerritorio(tablero, ruta.obtener(i));
+  }
+  return texto;
 }
 
 // Cierra la fase de ataque del jugador; Recibe: JuegoRisk& juego, Jugador& jugador; Retorna: void
@@ -273,6 +299,13 @@ int main() {
             is_initialized = true;
             cout << "(Comando correcto) El juego se ha inicializado "
                     "correctamente.\n";
+            // [IA] Aviso agregado con Claude (Prompt 16, Apendice A): el archivo es una partida
+            // guardada con 'guardar' (sus unidades ya no son las iniciales del numeral 1.4).
+            if (resultado == INICIALIZACION_PARTIDA_EN_CURSO) {
+              cout << "[*] Se cargo una partida en curso: las unidades no corresponden a "
+                      "la cantidad inicial. El turno empieza en el primer jugador con "
+                      "territorios.\n";
+            }
           }
         }
       } else {
@@ -292,7 +325,7 @@ int main() {
     4. La seleccion es uno de sus territorios
 
     Funcionamiento: 
-    1. JuegoRisk calcula las unidades: max(3, territorios / 3) + bono de continentes.
+    1. JuegoRisk calcula las unidades: territorios / 3 + bono de continentes.
     2. Si el jugador tiene un grupo valido de 3 cartas se le pregunta si desea canjearlo
        (la deteccion y el canje los hacen Jugador y JuegoRisk; aqui solo se pregunta).
     3. Muestra los territorios del jugador con su codigo oficial, se elige digitando el codigo
@@ -325,7 +358,7 @@ int main() {
           Jugador *jugadorActual = juego.obtenerJugadorEnTurno();
 
           // Obtiene los territorios del jugador actual
-          vector<Territorio *> territorio_posible;
+          ListaLineal<Territorio *> territorio_posible;
           juego.tableroJuego.territoriosDeJugador(jugadorActual->colorFicha,
                                                   territorio_posible);
 
@@ -358,7 +391,7 @@ int main() {
           }
 
           // Si el jugador no tiene territorios no hay donde ubicar unidades
-          if (territorio_posible.empty()) {
+          if (territorio_posible.estaVacia()) {
             tropas_a_anadir = 0;
           }
 
@@ -375,15 +408,15 @@ int main() {
             cout << "En cual de tus territorios deseas ubicar unidades?\n";
 
             // Se muestra el codigo de cada territorio del jugador
-            for (vector<Territorio *>::iterator i = territorio_posible.begin();
-                 i != territorio_posible.end(); ++i) {
-              cout << " " << (*i)->idTerritorio << " - " << (*i)->nombreTerritorio
-                   << " (Actuales: " << (*i)->cantidadTropas << ")\n";
+            for (int i = 0; i < territorio_posible.longitud(); ++i) {
+              Territorio *t = territorio_posible.obtener(i);
+              cout << " " << t->idTerritorio << " - " << t->nombreTerritorio
+                   << " (Actuales: " << t->cantidadTropas << ")\n";
             }
 
             // Selecciona el territorio por su codigo oficial
             cout << "Ingresa el codigo del territorio (ej. "
-                 << territorio_posible[0]->idTerritorio << "): ";
+                 << territorio_posible.obtener(0)->idTerritorio << "): ";
             string codigo = leerLinea();
             Territorio *destino =
                 buscarTerritorioPorCodigo(territorio_posible, codigo);
@@ -426,29 +459,31 @@ int main() {
     /*
     ===================================================================================
     validaciones globales:
-    1. El juego esta en curso y no ha terminado.
-    2. El jugador existe, es su turno y ya ha reclamado sus unidades.
-    3. verifica que el jugador ya ataco mediante el bood de "haAtacado"
+    1. El juego esta inicializado y no ha terminado.
+    2. El jugador existe, es su turno y ya ha reclamado sus unidades (su fase no es
+       FASE_OBTENER_UNIDADES).
+    3. El jugador todavia no ha fortificado (su fase no es FASE_FORTIFICAR).
 
     Funcionamiento (Paso a paso):
     1. Obtiene TODOS los territorios del jugador y filtra los que pueden atacar
-       (Mas de 1 tropa y tenga vecinos enemigos). Si no hay territorios válidos, informa de 
-       inmediato y finaliza la acción.
-    3. Selección de origen: Muestra TODOS los territorios del jugador con su codigo (indicando 
-       cuales no estan disponibles para atacar) y pide al jugador escribir el CODIGO del 
-       territorio desde cual atacar, junto con la cantidad de tropas a utilizar (las cuales son 
-       temporalmente restadas del territorio de origen).
-    4. Filtrado de objetivo: Una vez elegido el origen, crea un vector únicamente con los 
-       territorios vecinos que pertenecen a otros jugadores, y pide escribir el CODIGO del 
+       (Mas de 1 tropa y tenga vecinos enemigos). Si no hay territorios válidos, informa de
+       inmediato y pasa el jugador a la fase de fortificacion.
+    2. Selección de origen: Muestra TODOS los territorios del jugador con su codigo (indicando
+       cuales no estan disponibles para atacar) y pide al jugador escribir el CODIGO del
+       territorio desde cual atacar (o 0 para terminar la fase de ataque), junto con la
+       cantidad de tropas a utilizar (las cuales son temporalmente restadas del territorio
+       de origen).
+    3. Filtrado de objetivo: Una vez elegido el origen, llena una ListaLineal únicamente con los
+       territorios vecinos que pertenecen a otros jugadores, y pide escribir el CODIGO del
        territorio a atacar.
-    5. Ejecución del ataque: Llama a la función 'atacar()' pasándole las tropas atacantes 
-       y defensoras. Debido a que la función recibe estos parámetros por referencia (int &), 
+    4. Ejecución del ataque: Llama a la función 'atacar()' pasándole las tropas atacantes
+       y defensoras. Debido a que la función recibe estos parámetros por referencia (int &),
        las bajas se aplican y actualizan directamente en las variables suministradas.
-    6. Resultados: Si el ataque es exitoso, se asigna el territorio al atacante y se 
+    5. Resultados: Si el ataque es exitoso, se asigna el territorio al atacante y se
        ubican las tropas sobrevivientes allí (y se verifica si ya conquisto los 42 territorios).
        Si fracasa, las tropas sobrevivientes regresan al territorio de origen.
-    Muestra todos los territorios del jugador con su codigo oficial y permite seleccionar origen
-    y destino por codigo oficial.
+    6. Marca que el jugador ya ataco (habilita fortificar). El jugador puede volver a
+       ejecutar atacar en el mismo turno mientras no haya fortificado.
     ===================================================================================
     */
     else if (comando == "atacar") {
@@ -479,14 +514,14 @@ int main() {
 
           // Territorios del jugador: todos (para listarlos) y los aptos para atacar
           // (mas de 1 tropa y vecino enemigo), ambos calculados por TableroRisk
-          vector<Territorio *> todosMisTerritorios;
-          vector<Territorio *> misTerritorios;
+          ListaLineal<Territorio *> todosMisTerritorios;
+          ListaLineal<Territorio *> misTerritorios;
           juego.tableroJuego.territoriosDeJugador(jugadorActual->colorFicha,
                                                   todosMisTerritorios);
           juego.tableroJuego.territoriosAptosParaAtacar(
               jugadorActual->colorFicha, misTerritorios);
 
-          if (misTerritorios.empty()) {
+          if (misTerritorios.estaVacia()) {
             cout << "(Jugador no puede atacar) " << args[0]
                  << " no tiene territorios con mas de 1 tropa y vecinos enemigos para atacar.\n";
             // Si no puede atacar, avanza a fortificar para no bloquear el turno del jugador
@@ -494,8 +529,8 @@ int main() {
           } else {
             // Muestra todos los territorios del jugador con su codigo oficial
             cout << "\nDesde cual de tus territorios quieres atacar? (Ingresa 0 para no atacar / terminar fase de ataque)\n";
-            for (size_t i = 0; i < todosMisTerritorios.size(); ++i) {
-              Territorio *t = todosMisTerritorios[i];
+            for (int i = 0; i < todosMisTerritorios.longitud(); ++i) {
+              Territorio *t = todosMisTerritorios.obtener(i);
               cout << " " << t->idTerritorio << " - " << t->nombreTerritorio
                    << " (tienes " << t->cantidadTropas << " tropas)";
               if (buscarTerritorioPorCodigo(misTerritorios, t->idTerritorio) == NULL) {
@@ -544,22 +579,19 @@ int main() {
                 cout << "Error: Opcion invalida. El ataque no se realizo; puedes ejecutar atacar de nuevo.\n";
               } else {
 
-                // Filtrar únicamente los vecinos que pertenecen a otros jugadores
-                vector<Territorio *> territoriosAtacar;
-                for (int i = 0; i < territorioOrigen->adyacentes.longitud(); ++i) {
-                  Territorio *vecino = territorioOrigen->adyacentes.obtener(i);
-                  if (vecino->colorPropietario != jugadorActual->colorFicha) {
-                    territoriosAtacar.push_back(vecino);
-                  }
-                }
+                // Obtener los vecinos que pertenecen a otros jugadores desde el TAD Territorio
+                ListaLineal<Territorio *> territoriosAtacar;
+                territorioOrigen->vecinosEnemigos(jugadorActual->colorFicha,
+                                                  territoriosAtacar);
 
                 // Se muestra el codigo de cada territorio objetivo
                 cout << "\nA cual territorio quieres atacar?\n";
-                for (size_t i = 0; i < territoriosAtacar.size(); ++i) {
-                  cout << " " << territoriosAtacar[i]->idTerritorio << " - "
-                       << territoriosAtacar[i]->nombreTerritorio
-                       << " (Propietario: " << territoriosAtacar[i]->colorPropietario
-                       << " - Tropas: " << territoriosAtacar[i]->cantidadTropas << ")\n";
+                for (int i = 0; i < territoriosAtacar.longitud(); ++i) {
+                  Territorio *objetivo = territoriosAtacar.obtener(i);
+                  cout << " " << objetivo->idTerritorio << " - "
+                       << objetivo->nombreTerritorio
+                       << " (Propietario: " << objetivo->colorPropietario
+                       << " - Tropas: " << objetivo->cantidadTropas << ")\n";
                 }
 
                 // El territorio a atacar se escoge por su codigo oficial
@@ -608,6 +640,9 @@ int main() {
         mostrar_ayuda_comando(comando);
       }
     }
+    // ==========================================
+    // COMANDO: fortificar
+    // ==========================================
     /*
     ===================================================================================
     verificaciones globales:
@@ -616,7 +651,8 @@ int main() {
     3. El jugador existe, es su turno y ya ha atacado.
 
     Funcionamiento (Paso a paso):
-    1. Verifica que el jugador ya haya pasado por la fase de ataque (jugadorHaAtacado).
+    1. Verifica que el jugador ya haya pasado por la fase de ataque (haAtacadoTurnoActual),
+       cierra esa fase y, si conquisto algun territorio en el turno, le entrega su carta.
     2. Pregunta al usuario si desea fortificar un territorio.
     3. Muestra una lista (con codigos) de territorios propios que tienen al menos un vecino propio y >1 tropa.
     4. Pide escribir el CODIGO de un territorio de origen y luego el CODIGO de un vecino propio como destino.
@@ -650,8 +686,8 @@ int main() {
             cout << "[*] Recibiste una carta por conquistar territorios en este turno.\n";
           }
 
-          vector<Territorio *> territoriosDisponibles;
-          vector<Territorio *> vecinosDisponibles;
+          ListaLineal<Territorio *> territoriosDisponibles;
+          ListaLineal<Territorio *> vecinosDisponibles;
           Territorio *a = NULL;
           Territorio *b = NULL;
 
@@ -663,15 +699,16 @@ int main() {
             juego.tableroJuego.territoriosAptosParaFortificar(
                 jugadorActual->colorFicha, territoriosDisponibles);
 
-            if (territoriosDisponibles.empty()) {
+            if (territoriosDisponibles.estaVacia()) {
               cout << "No tienes territorios con tropas suficientes y vecinos propios para fortificar.\n";
             } else {
               // Se muestra el codigo de cada territorio y se escoge por codigo oficial
               cout << "\nDesde que territorio quieres mover unidades?\n";
-              for (size_t i = 0; i < territoriosDisponibles.size(); i++) {
-                cout << " " << territoriosDisponibles[i]->idTerritorio << " - "
-                     << territoriosDisponibles[i]->nombreTerritorio << " ("
-                     << territoriosDisponibles[i]->cantidadTropas << " tropas)\n";
+              for (int i = 0; i < territoriosDisponibles.longitud(); i++) {
+                Territorio *t = territoriosDisponibles.obtener(i);
+                cout << " " << t->idTerritorio << " - "
+                     << t->nombreTerritorio << " ("
+                     << t->cantidadTropas << " tropas)\n";
               }
 
               while (a == NULL) {
@@ -683,16 +720,13 @@ int main() {
               }
 
               cout << "\nHacia que vecino quieres fortificar?\n";
-              for (int i = 0; i < a->adyacentes.longitud(); i++) {
-                if (a->adyacentes.obtener(i)->colorPropietario == jugadorActual->colorFicha) {
-                  vecinosDisponibles.push_back(a->adyacentes.obtener(i));
-                }
-              }
+              a->vecinosPropios(jugadorActual->colorFicha, vecinosDisponibles);
 
-              for (size_t i = 0; i < vecinosDisponibles.size(); i++) {
-                cout << " " << vecinosDisponibles[i]->idTerritorio << " - "
-                     << vecinosDisponibles[i]->nombreTerritorio << " ("
-                     << vecinosDisponibles[i]->cantidadTropas << " tropas)\n";
+              for (int i = 0; i < vecinosDisponibles.longitud(); i++) {
+                Territorio *v = vecinosDisponibles.obtener(i);
+                cout << " " << v->idTerritorio << " - "
+                     << v->nombreTerritorio << " ("
+                     << v->cantidadTropas << " tropas)\n";
               }
 
               while (b == NULL) {
@@ -873,31 +907,80 @@ int main() {
     /*
     ===================================================================================
     verificaciones globales:
-    1. El juego esta inicializado.
-    2. El juego no ha terminado.
+    1. El juego esta inicializado y no ha terminado.
+    2. El jugador existe en la partida y el territorio destino existe en el tablero
+       (se puede ingresar por su codigo oficial o por su nombre).
 
     Funcionamiento (Paso a paso):
-    (Para la Entrega 3)
-    1. Calcula el costo y la secuencia de territorios a conquistar utilizando algoritmos
-       sobre grafos (como Dijkstra).
-    2. Indica el camino mas barato para conquistar el territorio indicado por el jugador.
+    1. Delega a JuegoRisk::calcularCostoConquista la construccion del grafo ponderado
+       y la ejecucion de Dijkstra multi-origen desde los territorios del jugador.
+    2. Si el jugador ya controla el territorio destino, informa que el costo es 0.
+    3. Imprime el territorio propio de inicio, los territorios intermedios a atravesar
+       (si los hay) y el total de unidades enemigas a conquistar.
     ===================================================================================
     */
     else if (comando == "costo_conquista") {
-      // Valida 2 parámetros: jugador y territorio
-      if (args.size() == 2) {
+      // [IA] Correccion hecha por Gemini 4 Neon: soporte para nombres de territorio con espacios
+      // y validacion de estado (is_initialized antes de estaTerminado) para distinguir juego terminado.
+      // Acepta 2 parametros (<jugador> <codigo_o_nombre>) o un nombre de territorio
+      // con espacios si coincide exactamente con un territorio valido del tablero.
+      bool paramsValidos = (args.size() == 2);
+      string parametroTerritorio = "";
+      if (args.size() >= 2) {
+        parametroTerritorio = args[1];
+        for (size_t i = 2; i < args.size(); ++i) {
+          parametroTerritorio += " " + args[i];
+        }
+        if (args.size() > 2 && is_initialized &&
+            juego.tableroJuego.obtenerTerritorioPorIdONombre(parametroTerritorio) != NULL) {
+          paramsValidos = true;
+        }
+      }
+
+      if (paramsValidos) {
         if (!is_initialized) {
           cout << "(Juego no inicializado) Esta partida no ha sido "
                   "inicializada correctamente.\n";
         } else if (juego.estaTerminado()) {
           cout << "(Juego terminado) Esta partida ya tuvo un ganador.\n";
+        } else if (juego.buscarJugadorPorNombre(args[0]) == NULL) {
+          cout << "(Jugador no válido) El jugador " << args[0]
+               << " no forma parte de esta partida.\n";
         } else {
-          // TODO: Búsqueda en grafos (Dijkstra u otro)
-          cout << "(Comando correcto) Para conquistar el territorio " << args[1]
-               << ", " << args[0]
-               << " debe atacar desde territorio_1, pasando por los "
-                  "territorios territorio_2, territorio_3, ..., territorio_m. "
-                  "Debe conquistar n unidades de ejército.\n";
+          const Territorio *terDestino =
+              juego.tableroJuego.obtenerTerritorioPorIdONombre(parametroTerritorio);
+          if (terDestino == NULL) {
+            cout << "(Territorio no válido) El territorio " << parametroTerritorio
+                 << " no existe en el tablero.\n";
+          } else {
+            ResultadoConquista res =
+                juego.calcularCostoConquista(args[0], terDestino->idTerritorio);
+            if (!res.esValido()) {
+              cout << "(Jugador sin territorios) El jugador " << args[0]
+                   << " no controla territorios desde los cuales atacar.\n";
+            } else if (res.estaYaControlado()) {
+              cout << "(Territorio ya controlado) El jugador " << args[0]
+                   << " ya controla el territorio "
+                   << etiquetaTerritorio(juego.tableroJuego, res.obtenerCodigoDestino())
+                   << ". Debe conquistar 0 unidades de ejército.\n";
+            } else {
+              string destTexto =
+                  etiquetaTerritorio(juego.tableroJuego, res.obtenerCodigoDestino());
+              string origTexto =
+                  etiquetaTerritorio(juego.tableroJuego, res.obtenerCodigoOrigen());
+              string intermedios =
+                  formatearIntermedios(juego.tableroJuego, res.obtenerRutaCodigos());
+
+              cout << "(Comando correcto) Para conquistar el territorio "
+                   << destTexto << ", " << args[0] << " debe atacar desde "
+                   << origTexto;
+              if (!intermedios.empty()) {
+                cout << ", pasando por los territorios " << intermedios;
+              }
+              cout << ". Debe conquistar " << res.obtenerCostoUnidades()
+                   << " unidades de ejército.\n";
+            }
+          }
         }
       } else {
         cout << "Error: Numero de parametros incorrecto.\n";
@@ -910,13 +993,14 @@ int main() {
     /*
     ===================================================================================
     verificaciones globales:
-    1. El juego esta inicializado.
-    2. El juego no ha terminado.
+    1. El juego esta inicializado y no ha terminado.
+    2. El jugador existe en la partida.
 
     Funcionamiento (Paso a paso):
-    (Para la Entrega 3)
-    1. Calcula la ruta de conquista que implique el menor numero de perdidas de ejercitos,
-       verificando todos los territorios posibles utilizando algoritmos sobre grafos.
+    1. Delega a JuegoRisk::calcularConquistaMasBarata el analisis del grafo del tablero
+       desde la perspectiva del jugador (Dijkstra multi-origen).
+    2. Identifica el territorio enemigo con menor costo total de unidades a conquistar
+       y muestra el origen, el destino, los intermedios (si los hay) y el costo total.
     ===================================================================================
     */
     else if (comando == "conquista_mas_barata") {
@@ -926,14 +1010,33 @@ int main() {
                   "inicializada correctamente.\n";
         } else if (juego.estaTerminado()) {
           cout << "(Juego terminado) Esta partida ya tuvo un ganador.\n";
+        } else if (juego.buscarJugadorPorNombre(args[0]) == NULL) {
+          cout << "(Jugador no válido) El jugador " << args[0]
+               << " no forma parte de esta partida.\n";
         } else {
-          // TODO: Algoritmo completo de rutas sobre grafos
-          cout << "(Comando correcto) La conquista más barata es avanzar sobre "
-                  "el territorio territorio_1 desde el territorio "
-                  "territorio_2. Para conquistar el territorio territorio_1, "
-                  "debe atacar desde territorio_2, pasando por los territorios "
-                  "territorio_3, territorio_4, ..., territorio_m. Debe "
-                  "conquistar n unidades de ejército.\n";
+          ResultadoConquista res = juego.calcularConquistaMasBarata(args[0]);
+          if (!res.esValido()) {
+            cout << "(Jugador sin territorios) El jugador " << args[0]
+                 << " no tiene conquistas disponibles en este momento.\n";
+          } else {
+            string destTexto =
+                etiquetaTerritorio(juego.tableroJuego, res.obtenerCodigoDestino());
+            string origTexto =
+                etiquetaTerritorio(juego.tableroJuego, res.obtenerCodigoOrigen());
+            string intermedios =
+                formatearIntermedios(juego.tableroJuego, res.obtenerRutaCodigos());
+
+            cout << "(Comando correcto) La conquista más barata es avanzar sobre "
+                    "el territorio "
+                 << destTexto << " desde el territorio " << origTexto
+                 << ". Para conquistar el territorio " << destTexto
+                 << ", debe atacar desde " << origTexto;
+            if (!intermedios.empty()) {
+              cout << ", pasando por los territorios " << intermedios;
+            }
+            cout << ". Debe conquistar " << res.obtenerCostoUnidades()
+                 << " unidades de ejército.\n";
+          }
         }
       } else {
         cout << "Error: Numero de parametros incorrecto.\n";

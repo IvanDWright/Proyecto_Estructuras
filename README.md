@@ -9,26 +9,30 @@ Sistema de apoyo interactivo, por línea de comandos, para el juego de mesa **Ri
 | Entrega | Contenido | Estado |
 |---|---|---|
 | Entrega 1 | Componente 1: configuración del juego con estructuras lineales | Completa |
-| **Entrega 2** | **Componente 2: almacenamiento de partidas con árbol de Huffman**, y correcciones de la Entrega 1 | **Completa (rama `entrega_2`)** |
-| Entrega 3 | Componente 3: estrategias de conquista con grafos | Pendiente |
+| Entrega 2 | Componente 2: almacenamiento de partidas con árbol de Huffman, y correcciones de la Entrega 1 | Completa (integrada en `main`) |
+| **Entrega 3** | **Componente 3: estrategias de conquista con grafos** | **Implementada (rama `entrega_3`)** |
 
 ## Características
 
 ### Componente 1: configuración del juego (estructuras lineales)
 - **Consola interactiva (REPL):** ciclo de lectura de comandos tras el prompt `$ `.
-- **Estructuras lineales propias:** los TADs del dominio usan la plantilla `ListaLineal<T>` (nodos y punteros), sin contenedores de la STL en el modelo del dominio. La STL se limita al análisis de texto de la consola en `main.cpp`.
-- **Reglas del juego:** refuerzos (`max(3, territorios / 3)` más bono de continentes), combate con dados, invasión de territorios, fortificación por adyacencia y rotación de turnos.
+- **Estructuras lineales propias:** los TADs del dominio y sus consultas usan la plantilla `ListaLineal<T>` (nodos y punteros), sin contenedores de la STL en el modelo del dominio. La STL se limita al análisis de texto de la consola en `main.cpp`.
+- **Reglas del juego:** refuerzos (`territorios / 3` más bono de continentes), combate con dados, invasión de territorios, fortificación por adyacencia y rotación de turnos.
 - **Lógica en los TADs:** en la Entrega 2 la lógica de juego se trasladó de `main.cpp` a los TADs (`JuegoRisk`, `TableroRisk`, `Jugador`, `Territorio`, `Continente`).
 
 ### Componente 2: almacenamiento de partidas (árbol de Huffman)
 - `guardar <archivo>`: guarda el estado de la partida en texto plano.
 - `guardar_comprimido <archivo>`: guarda la partida comprimida con **codificación de Huffman** en un archivo binario `.bin`.
-- `inicializar <archivo>`: carga una partida desde un archivo de texto o desde un `.bin` comprimido (si la partida ya fue inicializada, el comando lo avisa y no recarga).
+- `inicializar <archivo>`: carga una partida desde un archivo de texto (de inicio o generado por `guardar`) o desde un `.bin` comprimido (si la partida ya fue inicializada, el comando lo avisa y no recarga). La suma inicial de unidades (35/30/25/20) solo se exige a un archivo de inicio; un texto guardado a mitad de partida se carga como partida en curso.
 - Nuevos TADs: `NodoHuffman`, `ColaPrioridad` (cola de prioridad propia para construir el árbol), `ArbolHuffman` (construcción, codificación y decodificación) y `ArchivoHuffman` (lectura y escritura del formato binario).
 - Nota: en partidas pequeñas el `.bin` puede pesar un poco más que el texto original, porque guarda la tabla de frecuencias para poder decodificar.
 
 ### Componente 3: grafos (Entrega 3)
-Los comandos `costo_conquista` y `conquista_mas_barata` existen como *stubs*: validan la entrada y muestran un mensaje genérico. Su lógica con grafos se implementará en la Entrega 3.
+- Nuevo TAD `Grafo` (con `Vertice` y `Arista`): grafo dirigido y ponderado construido sobre `ListaLineal<T>`, con Dijkstra multi-origen y reconstrucción de caminos.
+- El tablero se modela desde el punto de vista del jugador: cada arista hacia un territorio enemigo pesa las unidades que lo defienden y hacia uno propio pesa 0.
+- `costo_conquista <nombre_jugador> <territorio>`: ruta y costo mínimos para conquistar el territorio (por código, p. ej. `5.6`, o por nombre, p. ej. `Kamchatka`) desde el territorio propio más cercano.
+- `conquista_mas_barata <nombre_jugador>`: de todos los territorios enemigos, el que implica conquistar menos unidades.
+- Diseño y plan de pruebas: [docs/Diseno_Entrega_3.md](docs/Diseno_Entrega_3.md).
 
 ## Documentación
 
@@ -71,7 +75,7 @@ En una sesión nueva, `inicializar partida.bin` recupera la misma partida.
 ## Estructura del proyecto
 
 - `src/`: programa principal (`main.cpp`).
-- `tads/`: Tipos Abstractos de Datos (`.h`, `.hxx`, `.cpp`), incluidos los de Huffman.
+- `tads/`: Tipos Abstractos de Datos (`.h`, `.hxx`, `.cpp`), incluidos los de Huffman y el `Grafo`.
 - `data/`: archivos de partida de ejemplo (`.txt`).
 - `docs/`: documentación, requisitos y especificaciones.
 
@@ -88,6 +92,6 @@ Dentro de la aplicación (cuando veas el prompt `$ `):
 - `estado_juego`: muestra jugadores, turno, territorios y unidades.
 - `guardar <nombre_archivo>`: guarda el estado en texto plano.
 - `guardar_comprimido <nombre_archivo>`: guarda el estado comprimido con Huffman.
-- `costo_conquista <nombre_jugador> <territorio>`: ruta de conquista (Entrega 3, aún sin lógica).
-- `conquista_mas_barata <nombre_jugador>`: conquista de menor costo (Entrega 3, aún sin lógica).
+- `costo_conquista <nombre_jugador> <territorio>`: calcula la ruta y el costo mínimo para conquistar un territorio.
+- `conquista_mas_barata <nombre_jugador>`: sugiere la conquista que implica menos unidades de ejército.
 - `salir`: termina el programa.

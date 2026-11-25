@@ -43,7 +43,7 @@ bool Territorio::agregarVecino(Territorio* ptrVecino) {
 }
 
 // Recibe una referencia constante al código de un territorio y revisa si es vecino de este.
-// Primero revisa si ese código no es nulo o es del mismo territorio, en caso de que lo sea retorna false.
+// Primero revisa si ese código está vacío o es el del mismo territorio, en caso de que lo sea retorna false.
 // En caso de que no, revisa la lista de vecinos, si está adentro de la lista retorna true, si no retorna false.
 bool Territorio::esVecinoDe(const std::string& idDestino) const {
     if (idDestino == "" || idDestino == this->idTerritorio) {
@@ -75,4 +75,32 @@ bool Territorio::tieneVecinoPropio(const std::string& colorJugador) const {
         }
     }
     return false;
+}
+
+// [IA] Correccion hecha por Gemini 4 Neon: traslado del filtrado de vecinos enemigos y propios
+// desde main.cpp hacia el TAD Territorio usando ListaLineal<Territorio*>.
+// Llena 'resultado' con los vecinos cuyo propietario tiene un color distinto al recibido;
+// Recibe: const string& colorJugador, ListaLineal<Territorio*>& resultado; Retorna: void
+void Territorio::vecinosEnemigos(const std::string& colorJugador,
+                                 ListaLineal<Territorio*>& resultado) const {
+    resultado.limpiar();
+    for (int i = 0; i < adyacentes.longitud(); i++) {
+        Territorio* vecino = adyacentes.obtener(i);
+        if (vecino->colorPropietario != colorJugador) {
+            resultado.agregarAlFinal(vecino);
+        }
+    }
+}
+
+// Llena 'resultado' con los vecinos cuyo propietario tiene el mismo color recibido;
+// Recibe: const string& colorJugador, ListaLineal<Territorio*>& resultado; Retorna: void
+void Territorio::vecinosPropios(const std::string& colorJugador,
+                                ListaLineal<Territorio*>& resultado) const {
+    resultado.limpiar();
+    for (int i = 0; i < adyacentes.longitud(); i++) {
+        Territorio* vecino = adyacentes.obtener(i);
+        if (vecino->colorPropietario == colorJugador) {
+            resultado.agregarAlFinal(vecino);
+        }
+    }
 }

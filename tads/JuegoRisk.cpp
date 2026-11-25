@@ -1,11 +1,10 @@
 #include "JuegoRisk.h"
 #include "ArbolHuffman.h"
 #include "ArchivoHuffman.h"
-#include <algorithm>
+#include <climits>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
-#include <vector>
 
 // Constructor por defecto, inicializa en ESTADO_NO_INICIALIZADO; Recibe: nada; Retorna: nada
 JuegoRisk::JuegoRisk() 
@@ -33,6 +32,16 @@ Jugador* JuegoRisk::obtenerJugadorEnTurno() {
 // Busca un jugador por su nombre en la lista; Recibe: const string& nombreBuscado; Retorna: Jugador*
 // Recorre la lista de jugadores y retorna un puntero al jugador si lo encuentra; si no existe retorna NULL.
 Jugador* JuegoRisk::buscarJugadorPorNombre(const std::string& nombreBuscado) {
+    for (int i = 0; i < listaJugadores.longitud(); i++) {
+        if (listaJugadores.obtener(i).nombreJugador == nombreBuscado) {
+            return &(listaJugadores.obtener(i));
+        }
+    }
+    return NULL;
+}
+
+// Busca un jugador por su nombre (version constante); Recibe: const string& nombreBuscado; Retorna: const Jugador*
+const Jugador* JuegoRisk::buscarJugadorPorNombre(const std::string& nombreBuscado) const {
     for (int i = 0; i < listaJugadores.longitud(); i++) {
         if (listaJugadores.obtener(i).nombreJugador == nombreBuscado) {
             return &(listaJugadores.obtener(i));
@@ -148,27 +157,51 @@ int JuegoRisk::lanzarDado() const {
     return rand() % 6 + 1;
 }
 
-// Resuelve una ronda de combate; Recibe: int& tropasAtq, int& tropasDef, vector<int>& dadosAtq, vector<int>& dadosDef; Retorna: void
+// Resuelve una ronda de combate; Recibe: int& tropasAtq, int& tropasDef, ListaLineal<int>& dadosAtq, ListaLineal<int>& dadosDef; Retorna: void
 // El atacante lanza min(3, tropasAtq) dados y el defensor min(2, tropasDef). Se ordenan de mayor a
 // menor y se comparan por pares; el atacante gana el duelo solo si su dado es mayor que el del defensor.
 void JuegoRisk::resolverRondaCombate(int& tropasAtq, int& tropasDef,
-                                     std::vector<int>& dadosAtq, std::vector<int>& dadosDef) {
+                                     ListaLineal<int>& dadosAtq, ListaLineal<int>& dadosDef) {
     int numAtq = tropasAtq < 3 ? tropasAtq : 3;
     int numDef = tropasDef < 2 ? tropasDef : 2;
-    dadosAtq.assign(numAtq, 0);
-    dadosDef.assign(numDef, 0);
+    int tmpAtq[3] = {0, 0, 0};
+    int tmpDef[2] = {0, 0};
+
     for (int i = 0; i < numAtq; i++) {
-        dadosAtq[i] = lanzarDado();
+        tmpAtq[i] = lanzarDado();
     }
     for (int i = 0; i < numDef; i++) {
-        dadosDef[i] = lanzarDado();
+        tmpDef[i] = lanzarDado();
     }
-    std::sort(dadosAtq.rbegin(), dadosAtq.rend());
-    std::sort(dadosDef.rbegin(), dadosDef.rend());
+
+    // Ordenar de mayor a menor (arreglos de maximo 3 y 2 elementos)
+    for (int i = 0; i < numAtq - 1; i++) {
+        for (int j = i + 1; j < numAtq; j++) {
+            if (tmpAtq[j] > tmpAtq[i]) {
+                int aux = tmpAtq[i];
+                tmpAtq[i] = tmpAtq[j];
+                tmpAtq[j] = aux;
+            }
+        }
+    }
+    if (numDef == 2 && tmpDef[1] > tmpDef[0]) {
+        int aux = tmpDef[0];
+        tmpDef[0] = tmpDef[1];
+        tmpDef[1] = aux;
+    }
+
+    dadosAtq.limpiar();
+    dadosDef.limpiar();
+    for (int i = 0; i < numAtq; i++) {
+        dadosAtq.agregarAlFinal(tmpAtq[i]);
+    }
+    for (int i = 0; i < numDef; i++) {
+        dadosDef.agregarAlFinal(tmpDef[i]);
+    }
 
     int duelos = numAtq < numDef ? numAtq : numDef;
     for (int i = 0; i < duelos; i++) {
-        if (dadosAtq[i] > dadosDef[i]) {
+        if (tmpAtq[i] > tmpDef[i]) {
             tropasDef--;
         } else {
             tropasAtq--;
@@ -224,10 +257,6 @@ bool JuegoRisk::moverTropas(const Jugador& jugador, Territorio* origen, Territor
     return true;
 }
 
-// =========================================================================
-// Métodos de almacenamiento de partidas (Componente 2)
-// =========================================================================
-
 // [IA] ubicarUnidades, apartarTropasAtacantes, devolverTropasAtacantes, actualizarDefensor y
 // terminarFaseAtaque generadas con Claude (Prompt 12, Apendice A: "mueve a los TADs la logica
 // que main modificaba directamente sobre los territorios").
@@ -276,6 +305,10 @@ bool JuegoRisk::terminarFaseAtaque(Jugador& jugador) {
     return otorgarCartaPorConquista(jugador);
 }
 
+// =========================================================================
+// Métodos de almacenamiento de partidas (Componente 2)
+// =========================================================================
+
 /*
 ===================================================================================
 cargarDesdeTexto
@@ -296,7 +329,8 @@ Funcionamiento (Paso a paso):
 5b. Si validarSumaInicial es true, valida que la suma de unidades de cada jugador sea la
    cantidad inicial del numeral 1.4: 35 (3 jugadores), 30 (4), 25 (5) o 20 (6).
 6. Si todo es correcto deja el juego temporal EN_CURSO con el turno en el primer jugador con
-   territorios; si no, retorna false y el juego original queda como estaba.
+   territorios (o TERMINADO si ese jugador ya ocupa los 42 territorios); si no, retorna false
+   y el juego original queda como estaba.
 ===================================================================================
 */
 // Carga segura; Recibe: const string& contenido, bool validarSumaInicial; Retorna: bool
@@ -334,7 +368,7 @@ bool JuegoRisk::cargarEnJuegoVacio(const std::string& contenido, bool validarSum
     tableroJuego.vaciarTablero();
     estadoJuego = ESTADO_NO_INICIALIZADO;
 
-    std::vector<std::string> coloresJugadores;
+    ListaLineal<std::string> coloresJugadores;
 
     // 2. Leer jugadores (nombre de máximo 8 caracteres sin espacios y color)
     //    Los nombres y los colores no se pueden repetir entre jugadores.
@@ -355,7 +389,7 @@ bool JuegoRisk::cargarEnJuegoVacio(const std::string& contenido, bool validarSum
                 break;
             }
             listaJugadores.agregarAlFinal(Jugador(nombre, color));
-            coloresJugadores.push_back(color);
+            coloresJugadores.agregarAlFinal(color);
         }
     }
 
@@ -372,8 +406,8 @@ bool JuegoRisk::cargarEnJuegoVacio(const std::string& contenido, bool validarSum
 
             // El color del territorio debe pertenecer a un jugador de la partida
             bool colorValido = false;
-            for (size_t j = 0; j < coloresJugadores.size(); ++j) {
-                if (coloresJugadores[j] == colorPropietario) {
+            for (int j = 0; j < coloresJugadores.longitud(); ++j) {
+                if (coloresJugadores.obtener(j) == colorPropietario) {
                     colorValido = true;
                     break;
                 }
@@ -413,7 +447,7 @@ bool JuegoRisk::cargarEnJuegoVacio(const std::string& contenido, bool validarSum
     }
 
     // 5. En un archivo de inicio cada jugador debe ocupar al menos un territorio. En una partida
-    //    guardada (.bin) un jugador ya eliminado puede tener 0 territorios.
+    //    guardada (.bin o texto de guardar) un jugador ya eliminado puede tener 0 territorios.
     // [IA] Condicion validarSumaInicial agregada con Claude (Prompt 13, Apendice A): antes un .bin
     // guardado despues de eliminar a un jugador no se podia volver a cargar.
     if (formatoCorrecto && validarSumaInicial) {
@@ -457,6 +491,9 @@ bool JuegoRisk::cargarEnJuegoVacio(const std::string& contenido, bool validarSum
         }
         nombreGanador = "";
         gruposCanjeados = 0;
+        // [IA] Linea agregada con Claude (Prompt 16, Apendice A): si la partida cargada ya tiene
+        // un jugador con los 42 territorios, queda TERMINADA con ese jugador como ganador.
+        verificarGanadorGlobal();
     } else {
         listaJugadores.limpiar();
         tableroJuego.vaciarTablero();
@@ -478,7 +515,10 @@ Funcionamiento (Paso a paso):
    porque un .bin lo genera guardar_comprimido y puede tener una partida en curso.
 3. Si no, lee el archivo como texto plano y lo carga exigiendo la suma inicial (35/30/25/20).
 4. Si el nombre no termina en ".bin" y el texto no sirvio, intenta como comprimido.
-5. Si nada funciono, SIN_FORMATO.
+5. Si el texto tiene el formato correcto pero las unidades ya no son las iniciales, es una
+   partida guardada con 'guardar' (numeral 2.2): la carga sin exigir la suma inicial y
+   retorna PARTIDA_EN_CURSO.
+6. Si nada funciono, SIN_FORMATO.
 ===================================================================================
 */
 // Decodifica un archivo comprimido con Huffman; Recibe: const string& nombreArchivo, string& contenido; Retorna: bool
@@ -535,6 +575,15 @@ ResultadoInicializacion JuegoRisk::inicializarDesdeArchivo(const std::string& no
         cargarDesdeTexto(decodificado, false)) {
         return INICIALIZACION_CORRECTA;
     }
+
+    // 5. Texto de una partida en curso (generado por guardar): mismas validaciones de formato,
+    //    colores y territorios, pero sin exigir la suma inicial de unidades.
+    // [IA] Paso agregado con Claude (Prompt 16, Apendice A: "inicializar debe poder cargar un
+    // archivo generado por guardar"). Antes un texto guardado despues de jugar un turno se
+    // rechazaba como sin formato, aunque el numeral 2.2 pide poder cargarlo.
+    if (cargarDesdeTexto(buffer.str(), false)) {
+        return INICIALIZACION_PARTIDA_EN_CURSO;
+    }
     return INICIALIZACION_SIN_FORMATO;
 }
 
@@ -584,4 +633,198 @@ bool JuegoRisk::guardarEnComprimido(const std::string& nombreArchivo) const {
 
     ArchivoHuffman archivoBin(nombreArchivo);
     return archivoBin.escribir(arbol, bits);
+}
+
+// =========================================================================
+// Metodos de estrategias de juego sobre grafos (Componente 3)
+// =========================================================================
+
+/*
+===================================================================================
+construirGrafoEstrategia
+
+Recibe: const std::string& colorJugador, Grafo& grafo, ListaLineal<int>& origenes.
+Retorna: void
+
+Funcionamiento (Paso a paso):
+1. Limpia el grafo y la lista de origenes. Si el tablero no tiene territorios, retorna.
+2. Recorre la lista lineal de territorios del tablero, agrega cada territorio como vertice
+   del grafo usando su codigo oficial y registra en 'origenes' los indices de los
+   territorios controlados por 'colorJugador'.
+3. Recorre pares de territorios (i, j) verificando con esVecinoDe si comparten frontera;
+   si son vecinos, agrega la arista dirigida (i -> j) en la lista de adyacencia del grafo
+   con peso 0 si el destino es propio o con las tropas del destino si es enemigo.
+===================================================================================
+*/
+// [IA] Correccion hecha por Gemini 4 Neon: ajuste de la construccion del grafo (limpieza de origenes,
+//  validacion a <= 0 sin imprimir en TAD y conexion de aristas ponderadas mediante esVecinoDe).
+void JuegoRisk::construirGrafoEstrategia(const std::string& colorJugador,
+                                         Grafo& grafo,
+                                         ListaLineal<int>& origenes) const {
+    grafo.limpiar();
+    origenes.limpiar();
+
+    int a = tableroJuego.listaTerritoriosGlob.longitud();
+    if (a <= 0) {
+        return;
+    }
+
+    // 1. Agregar cada territorio del tablero como vertice del grafo y marcar los propios
+    for (int i = 0; i < a; i++) {
+        const Territorio& ter = tableroJuego.listaTerritoriosGlob.obtener(i);
+        int idx = grafo.agregarVertice(ter.idTerritorio);
+        if (ter.colorPropietario == colorJugador) {
+            origenes.agregarAlFinal(idx);
+        }
+    }
+
+    // 2. Conectar las aristas dirigidas verificando vecindad con esVecinoDe
+    for (int i = 0; i < a; i++) {
+        const Territorio& terOrigen = tableroJuego.listaTerritoriosGlob.obtener(i);
+        for (int j = 0; j < a; j++) {
+            if (i == j) {
+                continue;
+            }
+            const Territorio& terDestino = tableroJuego.listaTerritoriosGlob.obtener(j);
+            if (terOrigen.esVecinoDe(terDestino.idTerritorio)) {
+                int peso = (terDestino.colorPropietario == colorJugador) ? 0 : terDestino.cantidadTropas;
+                grafo.agregarAristaPorIndice(i, j, peso);
+            }
+        }
+    }
+}
+
+/*
+===================================================================================
+calcularCostoConquista
+
+Recibe: const std::string& nombreJugador, const std::string& idTerritorioDestino.
+Retorna: ResultadoConquista
+
+Funcionamiento (Paso a paso):
+1. Verifica que el jugador y el territorio destino existan en la partida.
+2. Si el jugador ya controla el territorio destino, retorna yaControlado = true y costo 0.
+3. Construye el grafo ponderado desde el punto de vista del jugador y ejecuta Dijkstra
+   multi-origen desde todos los territorios controlados por el jugador.
+4. Reconstruye la ruta minima hasta el destino y llena ResultadoConquista con el costo,
+   el territorio propio de inicio, el destino y la secuencia de codigos.
+===================================================================================
+*/
+ResultadoConquista JuegoRisk::calcularCostoConquista(const std::string& nombreJugador,
+                                                     const std::string& idTerritorioDestino) const {
+    ResultadoConquista resultado;
+    const Jugador* jugador = buscarJugadorPorNombre(nombreJugador);
+    const Territorio* destino = tableroJuego.obtenerTerritorioPorId(idTerritorioDestino);
+    if (jugador == NULL || destino == NULL) {
+        return resultado;
+    }
+
+    if (destino->colorPropietario == jugador->colorFicha) {
+        resultado.valido = true;
+        resultado.yaControlado = true;
+        resultado.costoUnidades = 0;
+        resultado.codigoOrigen = destino->idTerritorio;
+        resultado.codigoDestino = destino->idTerritorio;
+        resultado.rutaCodigos.agregarAlFinal(destino->idTerritorio);
+        return resultado;
+    }
+
+    Grafo grafo;
+    ListaLineal<int> origenes;
+    construirGrafoEstrategia(jugador->colorFicha, grafo, origenes);
+
+    ListaLineal<int> distancias;
+    ListaLineal<int> saltos;
+    ListaLineal<int> predecesores;
+    if (!grafo.dijkstraMultiOrigen(origenes, distancias, saltos, predecesores)) {
+        return resultado;
+    }
+
+    int idxDestino = grafo.buscarVertice(destino->idTerritorio);
+    if (idxDestino == -1 || distancias.obtener(idxDestino) == INT_MAX) {
+        return resultado;
+    }
+
+    ListaLineal<std::string> ruta;
+    grafo.reconstruirCamino(idxDestino, predecesores, ruta);
+    if (ruta.longitud() < 2) {
+        return resultado;
+    }
+
+    resultado.valido = true;
+    resultado.yaControlado = false;
+    resultado.costoUnidades = distancias.obtener(idxDestino);
+    resultado.codigoOrigen = ruta.obtener(0);
+    resultado.codigoDestino = ruta.obtener(ruta.longitud() - 1);
+    resultado.rutaCodigos = ruta;
+    return resultado;
+}
+
+/*
+===================================================================================
+calcularConquistaMasBarata
+
+Recibe: const std::string& nombreJugador. Retorna: ResultadoConquista
+
+Funcionamiento (Paso a paso):
+1. Verifica que el jugador exista en la partida.
+2. Construye el grafo ponderado desde el punto de vista del jugador y ejecuta Dijkstra
+   multi-origen desde todos sus territorios controlados.
+3. Recorre todos los territorios enemigos alcanzables y escoge el de menor costo total
+   en unidades de ejercito (desempatando por menor cantidad de saltos).
+4. Reconstruye la ruta minima hasta ese territorio y retorna ResultadoConquista.
+===================================================================================
+*/
+// [IA] Implementacion y correccion hecha por Gemini 4 Neon: consulta const de conquista
+// mas barata usando ListaLineal<T> y desempate por menor cantidad de saltos.
+ResultadoConquista JuegoRisk::calcularConquistaMasBarata(const std::string& nombreJugador) const {
+    ResultadoConquista resultado;
+    const Jugador* jugador = buscarJugadorPorNombre(nombreJugador);
+    if (jugador == NULL) {
+        return resultado;
+    }
+
+    Grafo grafo;
+    ListaLineal<int> origenes;
+    construirGrafoEstrategia(jugador->colorFicha, grafo, origenes);
+
+    ListaLineal<int> distancias;
+    ListaLineal<int> saltos;
+    ListaLineal<int> predecesores;
+    if (!grafo.dijkstraMultiOrigen(origenes, distancias, saltos, predecesores)) {
+        return resultado;
+    }
+
+    int mejorIndice = -1;
+    int a = tableroJuego.listaTerritoriosGlob.longitud();
+    for (int i = 0; i < a; i++) {
+        const Territorio& ter = tableroJuego.listaTerritoriosGlob.obtener(i);
+        if (ter.colorPropietario == jugador->colorFicha || distancias.obtener(i) == INT_MAX) {
+            continue;
+        }
+        if (mejorIndice == -1 ||
+            distancias.obtener(i) < distancias.obtener(mejorIndice) ||
+            (distancias.obtener(i) == distancias.obtener(mejorIndice) &&
+             saltos.obtener(i) < saltos.obtener(mejorIndice))) {
+            mejorIndice = i;
+        }
+    }
+
+    if (mejorIndice == -1) {
+        return resultado;
+    }
+
+    ListaLineal<std::string> ruta;
+    grafo.reconstruirCamino(mejorIndice, predecesores, ruta);
+    if (ruta.longitud() < 2) {
+        return resultado;
+    }
+
+    resultado.valido = true;
+    resultado.yaControlado = false;
+    resultado.costoUnidades = distancias.obtener(mejorIndice);
+    resultado.codigoOrigen = ruta.obtener(0);
+    resultado.codigoDestino = ruta.obtener(ruta.longitud() - 1);
+    resultado.rutaCodigos = ruta;
+    return resultado;
 }

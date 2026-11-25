@@ -234,6 +234,66 @@ TableroRisk::obtenerTerritorioPorId(const std::string &idBuscado) const {
   return NULL;
 }
 
+// [IA] Correccion hecha por Gemini 4 Neon: normalizacion de mayusculas y tildes UTF-8
+// para permitir buscar territorios por codigo oficial o por nombre en costo_conquista.
+// Normaliza un texto a minusculas y quita tildes/enie UTF-8 para comparar nombres;
+// Recibe: const string& texto; Retorna: string
+static std::string normalizarTextoTerritorio(const std::string &texto) {
+  std::string resultado = "";
+  for (size_t i = 0; i < texto.size(); i++) {
+    unsigned char c = (unsigned char)texto[i];
+    if (c == 0xC3 && i + 1 < texto.size()) {
+      unsigned char sig = (unsigned char)texto[i + 1];
+      if (sig == 0xA1 || sig == 0x81) { resultado += 'a'; i++; continue; }
+      if (sig == 0xA9 || sig == 0x89) { resultado += 'e'; i++; continue; }
+      if (sig == 0xAD || sig == 0x8D) { resultado += 'i'; i++; continue; }
+      if (sig == 0xB3 || sig == 0x93) { resultado += 'o'; i++; continue; }
+      if (sig == 0xBA || sig == 0x9A || sig == 0xBC || sig == 0x9C) { resultado += 'u'; i++; continue; }
+      if (sig == 0xB1 || sig == 0x91) { resultado += 'n'; i++; continue; }
+    }
+    if (c >= 'A' && c <= 'Z') {
+      resultado += (char)(c - 'A' + 'a');
+    } else {
+      resultado += (char)c;
+    }
+  }
+  return resultado;
+}
+
+// Busca un territorio por su codigo oficial o por su nombre; Recibe: const string& textoBuscado; Retorna: Territorio*
+Territorio *TableroRisk::obtenerTerritorioPorIdONombre(const std::string &textoBuscado) {
+  Territorio *porId = obtenerTerritorioPorId(textoBuscado);
+  if (porId != NULL) {
+    return porId;
+  }
+  std::string objetivo = normalizarTextoTerritorio(textoBuscado);
+  for (int i = 0; i < listaTerritoriosGlob.longitud(); i++) {
+    Territorio &ter = listaTerritoriosGlob.obtener(i);
+    if (normalizarTextoTerritorio(ter.nombreTerritorio) == objetivo) {
+      return &ter;
+    }
+  }
+  return NULL;
+}
+
+// Busca un territorio por su codigo oficial o por su nombre (version constante);
+// Recibe: const string& textoBuscado; Retorna: const Territorio*
+const Territorio *
+TableroRisk::obtenerTerritorioPorIdONombre(const std::string &textoBuscado) const {
+  const Territorio *porId = obtenerTerritorioPorId(textoBuscado);
+  if (porId != NULL) {
+    return porId;
+  }
+  std::string objetivo = normalizarTextoTerritorio(textoBuscado);
+  for (int i = 0; i < listaTerritoriosGlob.longitud(); i++) {
+    const Territorio &ter = listaTerritoriosGlob.obtener(i);
+    if (normalizarTextoTerritorio(ter.nombreTerritorio) == objetivo) {
+      return &ter;
+    }
+  }
+  return NULL;
+}
+
 // Cuenta territorios controlados por un jugador; Recibe: const string& colorJugador; Retorna: int
 // Recorre los 42 territorios y cuenta aquellos cuyo color coincide con el recibido.
 int TableroRisk::cantidadTerritoriosOcupadosPor(
@@ -260,43 +320,45 @@ int TableroRisk::obtenerBonoPorContinentesDominados(
   return bonoTotal;
 }
 
-// Obtiene todos los territorios que ocupa un jugador; Recibe: const string& colorJugador, vector<Territorio*>& resultado; Retorna: void
-// Limpia el vector resultado y lo llena con los punteros a los territorios ocupados por el color recibido.
+// Obtiene todos los territorios que ocupa un jugador; Recibe: const string& colorJugador, ListaLineal<Territorio*>& resultado; Retorna: void
+// Limpia la lista resultado y la llena con los punteros a los territorios ocupados por el color recibido.
 void TableroRisk::territoriosDeJugador(const std::string &colorJugador,
-                                       std::vector<Territorio *> &resultado) {
-  resultado.clear();
+                                       ListaLineal<Territorio *> &resultado) {
+  resultado.limpiar();
   for (int i = 0; i < listaTerritoriosGlob.longitud(); i++) {
     Territorio *t = &(listaTerritoriosGlob.obtener(i));
     if (t->colorPropietario == colorJugador) {
-      resultado.push_back(t);
+      resultado.agregarAlFinal(t);
     }
   }
 }
 
-// Territorios desde los que se puede atacar; Recibe: const string& colorJugador, vector<Territorio*>& resultado; Retorna: void
+// Territorios desde los que se puede atacar; Recibe: const string& colorJugador, ListaLineal<Territorio*>& resultado; Retorna: void
 // Filtra los territorios del jugador con mas de 1 tropa y al menos un vecino enemigo.
 void TableroRisk::territoriosAptosParaAtacar(const std::string &colorJugador,
-                                             std::vector<Territorio *> &resultado) {
-  std::vector<Territorio *> propios;
+                                             ListaLineal<Territorio *> &resultado) {
+  ListaLineal<Territorio *> propios;
   territoriosDeJugador(colorJugador, propios);
-  resultado.clear();
-  for (size_t i = 0; i < propios.size(); i++) {
-    if (propios[i]->cantidadTropas > 1 && propios[i]->tieneVecinoEnemigo(colorJugador)) {
-      resultado.push_back(propios[i]);
+  resultado.limpiar();
+  for (int i = 0; i < propios.longitud(); i++) {
+    Territorio *t = propios.obtener(i);
+    if (t->cantidadTropas > 1 && t->tieneVecinoEnemigo(colorJugador)) {
+      resultado.agregarAlFinal(t);
     }
   }
 }
 
-// Territorios desde los que se puede fortificar; Recibe: const string& colorJugador, vector<Territorio*>& resultado; Retorna: void
+// Territorios desde los que se puede fortificar; Recibe: const string& colorJugador, ListaLineal<Territorio*>& resultado; Retorna: void
 // Filtra los territorios del jugador con mas de 1 tropa y al menos un vecino propio.
 void TableroRisk::territoriosAptosParaFortificar(const std::string &colorJugador,
-                                                 std::vector<Territorio *> &resultado) {
-  std::vector<Territorio *> propios;
+                                                 ListaLineal<Territorio *> &resultado) {
+  ListaLineal<Territorio *> propios;
   territoriosDeJugador(colorJugador, propios);
-  resultado.clear();
-  for (size_t i = 0; i < propios.size(); i++) {
-    if (propios[i]->cantidadTropas > 1 && propios[i]->tieneVecinoPropio(colorJugador)) {
-      resultado.push_back(propios[i]);
+  resultado.limpiar();
+  for (int i = 0; i < propios.longitud(); i++) {
+    Territorio *t = propios.obtener(i);
+    if (t->cantidadTropas > 1 && t->tieneVecinoPropio(colorJugador)) {
+      resultado.agregarAlFinal(t);
     }
   }
 }

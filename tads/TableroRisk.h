@@ -5,7 +5,6 @@
 #include "ListaLineal.h"
 #include "Territorio.h"
 #include <string>
-#include <vector>
 
 // =========================================================================
 // TAD TableroRisk
@@ -47,6 +46,11 @@ public:
   Territorio *obtenerTerritorioPorId(const std::string &idBuscado);
   const Territorio *obtenerTerritorioPorId(const std::string &idBuscado) const;
 
+  // Busca un territorio por su código oficial o por su nombre (sin distinguir
+  // mayúsculas ni tildes UTF-8). Búsqueda en O(N).
+  Territorio *obtenerTerritorioPorIdONombre(const std::string &textoBuscado);
+  const Territorio *obtenerTerritorioPorIdONombre(const std::string &textoBuscado) const;
+
   // Cuenta cuántos territorios están actualmente controlados por un color
   // determinado (jugador) en todo el tablero. Complejidad: O(N)
   int cantidadTerritoriosOcupadosPor(const std::string &colorJugador) const;
@@ -55,21 +59,21 @@ public:
   // jugador. Verifica cada continente para sumar tropas extra. Complejidad: O(N)
   int obtenerBonoPorContinentesDominados(const std::string &colorJugador) const;
 
-  // Llena el vector 'resultado' con punteros a todos los territorios que ocupa
+  // Llena la lista 'resultado' con punteros a todos los territorios que ocupa
   // el jugador del color dado, en el orden del tablero. Se usa en los comandos para
   // mostrar todos los territorios del jugador junto con su código oficial. Complejidad: O(N)
   void territoriosDeJugador(const std::string &colorJugador,
-                            std::vector<Territorio *> &resultado);
+                            ListaLineal<Territorio *> &resultado);
 
   // Llena 'resultado' con los territorios del jugador desde los cuales puede
   // atacar: mas de 1 tropa y al menos un vecino enemigo.
   void territoriosAptosParaAtacar(const std::string &colorJugador,
-                                  std::vector<Territorio *> &resultado);
+                                  ListaLineal<Territorio *> &resultado);
 
   // Llena 'resultado' con los territorios del jugador desde los cuales puede
   // fortificar: mas de 1 tropa y al menos un vecino propio.
   void territoriosAptosParaFortificar(const std::string &colorJugador,
-                                      std::vector<Territorio *> &resultado);
+                                      ListaLineal<Territorio *> &resultado);
 
   // Limpia y libera las colecciones de territorios y continentes.
   void vaciarTablero();
